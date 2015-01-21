@@ -1,0 +1,156 @@
+.tcal-header-modechanger, .tcal-more-func-btn{
+	float: right;
+	margin-right: 20px;
+}
+
+.tcal-header-modechanger span.ui-button-text{
+	min-width:50px;
+}
+
+.tcal-header > .ui-menu{
+	position:absolute;
+	width:100px;
+}
+
+.tcal-grid{
+	margin: 0px 10px 2px;
+	border: 1px solid #dedede;
+	box-sizing: border-box;
+	padding:0px 1px;
+}
+
+.tcal-header > .ui-menu{
+	text-align:right;
+	font-size: 10pt;
+	font-family: Arial, Verdana;
+	font-weight: normal;
+}
+
+.tcal-header > .ui-menu > li{
+	padding: 5px;
+}
+
+.tcal-next-month-btn, .tcal-prev-month-btn{
+	float:left;
+	margin-left:15px;
+}
+
+.tcal-prev-month-btn +.tcal-next-month-btn{
+	margin-left:0px;
+}
+
+.tcal-today-btn{
+	float:left;
+	margin-left: 20px;
+}
+
+.tcal-header{
+	text-align:center;
+	position:relative;
+	box-sizing: border-box;
+	padding: 5px;
+}
+
+.tcal-header-title-container{
+	display:inline-block;
+	float:left;
+	margin-left: 20px;
+}
+
+.tcal-header-primary-title, .tcal-header-secondary-title{
+	font-size: 21px;
+	font-weight: normal;
+	display:inline-block;
+	font-family: Arial, Verdana;
+}
+
+.tcal-header-primary-title + .tcal-header-secondary-title{
+	margin-left: 7px;
+}
+
+.tcal-header-modechanger{
+	margin-right: 20px;
+}
+
+.tcal-header-morefunc{
+	margin-right:20px;
+}
+
+.tcal-header-ext{
+	margin: 2px 10px 0px;
+	padding: 1px 2px;
+	box-sizing: border-box;
+}
+
+.tcal-header-ext .tcal-month-week-cell{
+	float:left;
+    box-sizing: border-box;
+    display: inline-block;
+    margin: 0 -1px;
+    font-family: Arial, Verdana;
+    font-size: 12px;
+    padding-left: 5px;
+}
+
+#ui-datepicker-div, .ui-button { 
+	font-size:10px; 
+}
+
+.tcal-today-field{
+	float:left;
+}
+
+.tcal-month-day-cell{
+	background-image: url("images/day-cell.png");
+	background-repeat:repeat-y;
+	background-color: #fff;
+	background-size: 100% 3px;
+/*	width: 14.413%; */
+/*	height: 20%; */
+	float:left;
+	display:inline-block;
+	border:1px solid #dedede;
+	border-left:none;
+	border-right:none;
+	box-sizing:border-box;
+	margin: 0px -1px;
+}
+
+.tcal-month-today.tcal-month-day-cell{
+	background-color: #E0FFFF;
+}
+
+.tcal-month-day-cell > .tcal-month-day-cell-header{
+	/*background-color: #ccc;*/
+	text-align:left;
+	box-sizing:border-box;
+	height:20px;
+}
+
+.tcal-header *:last-child{
+	clear:both;
+}
+
+.tcal-month-day-cell:last-child:after{
+	clear:both;
+}
+
+.tcal-month-day-cell-header-day{
+	font-size: 12px;
+	font-family: Arial, Verdana;
+	padding: 5px;
+}
+
+.tcal-month-different-month .tcal-month-day-cell-header-day{
+	color: #bbb;
+}
+
+.tcal-month-today .tcal-month-day-cell-header-day:after{
+ 	border-bottom: 5px solid transparent;
+    border-right: 9px solid red;
+    border-top: 5px solid transparent;
+    content: " ";
+    display: inline-block;
+    height: 0;
+}
+
