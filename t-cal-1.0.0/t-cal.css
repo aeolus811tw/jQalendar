@@ -114,6 +114,8 @@
 	border-right:none;
 	box-sizing:border-box;
 	margin: 0px -1px;
+	overflow: visible;
+	opcaity: .99;
 }
 
 .tcal-month-today.tcal-month-day-cell{
@@ -143,6 +145,55 @@
 
 .tcal-month-different-month .tcal-month-day-cell-header-day{
 	color: #bbb;
+}
+.tcal-month-agenda {
+	height: 20%;
+	min-height: 20px;
+	float:left;
+	margin:2px 2px 0px 2px;
+	box-sizing: border-box;
+	text-align:center;
+	border-radius: 5px;
+}
+
+.tcal-month-agenda-actual{
+	background-image: url("images/month-agenda-spirit.png");
+	background-size: auto 100%;
+	background-repeast: repeat-x;
+	text-align:center;
+	position:relative;
+	z-index: 1;
+	cursor: pointer;
+}
+
+.tcal-month-agenda-title{
+	font-size: 12px;
+	font-family: Arial, Verdana;
+	padding:2px;
+	display:inline-block;
+}
+
+.tcal-month-agenda-continue-container{
+	background:white;
+	float:left;
+	display:inline-block;
+	margin:2px;
+	box-sizing: border-box;
+    float: left;
+    font-size: 14px;
+    line-height: 16px;
+    margin: 2px;
+    min-height: 16px;
+    min-width: 16px;
+}
+
+.tcal-month-agenda-continue:after{
+ 	border-bottom: 5px solid transparent;
+    border-right: 9px solid #87CEFA;
+    border-top: 5px solid transparent;
+    content: " ";
+    display: inline-block;
+    height: 0;
 }
 
 .tcal-month-today .tcal-month-day-cell-header-day:after{
