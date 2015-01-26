@@ -207,7 +207,15 @@ $.widget("aekt.tcalendar", {
 	},
 	_onAgendaClick: function(srcObj){
 		var $srcObj = $(srcObj);
-		this._trigger("agendaClick", null, [srcObj, this.getAgendaById($srcObj.data("id"))]);
+		this._trigger("agendaClick", null, [$(srcObj), this.getAgendaById($srcObj.data("id"))]);
+	},
+	_onAgendaMouseEnter: function(srcObj){
+		var $srcObj = $(srcObj);
+		this._trigger("agendaMouseEnter", null, [$(srcObj), this.getAgendaById($srcObj.data("id"))]);
+	},
+	_onAgendaMouseExit : function(srcObj){
+		var $srcObj = $(srcObj);
+		this._trigger("agendaMouseExit", null, [$(srcObj), this.getAgendaById($srcObj.data("id"))]);
 	},
 	//basic utility function
 	_isToday : function(date){
@@ -430,7 +438,15 @@ $.widget("aekt.tcalendar", {
 					var $label = $("<div/>", {html : agenda.title, "class" : "tcal-month-agenda-title"});
 					$div.append($label).click(function(e){
 						$this._onAgendaClick(this);
+					}).hover(function(){
+						$this._onAgendaMouseEnter(this);
+					}, function(){
+						$this._onAgendaMouseExit(this);
 					});
+					//attach tooltip callback if exist
+					if ($this.options.agendaTooltip){
+						$this.options.agendaTooltip($div, agenda);
+					}
 					//difference
 					attr.upToDate = new Date(counterDate.getTime() + ( 7 - counterDate.getDay()) * 86400000);
 					if (attr.upToDate.getTime() > agenda.endDate){
@@ -474,7 +490,15 @@ $.widget("aekt.tcalendar", {
 							var $label = $("<div/>", {html : agenda.title, "class" : "tcal-month-agenda-title"});
 							$div.append($label).click(function(e){
 								$this._onAgendaClick(this);
+							}).hover(function(){
+								$this._onAgendaMouseEnter(this);
+							}, function(){
+								$this._onAgendaMouseExit(this);
 							});
+							//attach tooltip callback if exist
+							if ($this.options.agendaTooltip){
+								$this.options.agendaTooltip($div, agenda);
+							}
 							//add continue label
 							var $continueContainer = $("<div/>", {"class" : "tcal-month-agenda-continue-container", html: "<"}).css("height", "100%");
 							$div.append($continueContainer);
