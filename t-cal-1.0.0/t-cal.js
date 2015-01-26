@@ -159,6 +159,32 @@ $.widget("aekt.tcalendar", {
 				console.log(err);
 		}
 	},
+	getAgendaById: function(id){
+		var agenda;
+		$.each(this.options.agenda, function(index, val){
+			if (val.id == id)
+				agenda = val;
+		});
+		return agenda;
+	},
+	updateAgendaById: function(id, data){
+		var agendaIndex = -1;
+		$.each(this.options.agenda, function(index, val){
+			if (val.id == data.id)
+				agendaIndex = index;
+		});
+		if (agendaIndex >= 0){
+			$.extend(true, this.options.agenda[agendaIndex], data);
+			if (this.options.debug){
+				console.log("updateAgendaById: updated Agenda with Id " + id );
+			}
+			return this.options.agenda[agendaIndex];
+		}
+		if (this.options.debug){
+			console.log("updateAgendaById: no agenda with Id " + id + " was found.");
+		}		
+		
+	},
 	refresh : function(){
 		if (this._mode[this.options.mode] && this._mode[this.options.mode].func && this._mode[this.options.mode].func.refresh){
 			this[this._mode[this.options.mode].func.refresh]();
@@ -178,6 +204,10 @@ $.widget("aekt.tcalendar", {
 		if (this._mode[this.options.mode] && this._mode[this.options.mode].func && this._mode[this.options.mode].func.date){
 			this[this._mode[this.options.mode].func.date]();
 		}
+	},
+	_onAgendaClick: function(srcObj){
+		var $srcObj = $(srcObj);
+		this._trigger("agendaClick", null, [srcObj, this.getAgendaById($srcObj.data("id"))]);
 	},
 	//basic utility function
 	_isToday : function(date){
@@ -199,6 +229,11 @@ $.widget("aekt.tcalendar", {
 	_verifyAgenda: function(data){
 		if (typeof data.id === "undefined"){
 			throw "missing id field";
+		}else{
+			$.each(this.options.agenda, function(index, val){
+				if (val.id == data.id)
+					throw "cannot have duplicated id, each id must be unique";
+			});
 		}
 		if (data.startDate){
 			if (typeof data.startDate == "string")
@@ -393,7 +428,9 @@ $.widget("aekt.tcalendar", {
 					$div.addClass("tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual").css("background-color", agenda.color);
 					//add label
 					var $label = $("<div/>", {html : agenda.title, "class" : "tcal-month-agenda-title"});
-					$div.append($label);
+					$div.append($label).click(function(e){
+						$this._onAgendaClick(this);
+					});
 					//difference
 					attr.upToDate = new Date(counterDate.getTime() + ( 7 - counterDate.getDay()) * 86400000);
 					if (attr.upToDate.getTime() > agenda.endDate){
@@ -403,6 +440,7 @@ $.widget("aekt.tcalendar", {
 					//console.log(range);
 					$div.data("days", range);
 					$div.data("weekday", counterDate.getDay());
+					$div.data("id", agenda.id);
 					var width = $this._monthAgendaWidthOfIndex(counterDate.getDay(), range);
 					$div.css("width",  width + "px");
 					//insert div into the cell
@@ -434,13 +472,16 @@ $.widget("aekt.tcalendar", {
 							$div = $("<div/>", {"class" : "tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual"}).css("background-color", agenda.color); //the div for agenda
 							//add label
 							var $label = $("<div/>", {html : agenda.title, "class" : "tcal-month-agenda-title"});
-							$div.append($label);
+							$div.append($label).click(function(e){
+								$this._onAgendaClick(this);
+							});
 							//add continue label
 							var $continueContainer = $("<div/>", {"class" : "tcal-month-agenda-continue-container", html: "<"}).css("height", "100%");
 							$div.append($continueContainer);
 							var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / 86400000);
 							$div.data("days", range);
 							$div.data("weekday", counterDate.getDay());
+							$div.data("id", agenda.id);
 							var width = $this._monthAgendaWidthOfIndex(counterDate.getDay(), range);
 							$div.css("width",  width + "px");
 							//insert div into the cell
