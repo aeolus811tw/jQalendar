@@ -30,12 +30,12 @@
 	padding: 5px;
 }
 
-.tcal-next-month-btn, .tcal-prev-month-btn{
+.tcal-next-btn, .tcal-prev-btn{
 	float:left;
 	margin-left:15px;
 }
 
-.tcal-prev-month-btn +.tcal-next-month-btn{
+.tcal-prev-btn +.tcal-next-btn{
 	margin-left:0px;
 }
 
@@ -82,7 +82,7 @@
 	box-sizing: border-box;
 }
 
-.tcal-header-ext .tcal-month-week-cell{
+.tcal-header-ext .tcal-month-week-cell, .tcal-week-header-cell{
 	float:left;
     box-sizing: border-box;
     display: inline-block;
@@ -90,6 +90,10 @@
     font-family: Arial, Verdana;
     font-size: 12px;
     padding-left: 5px;
+}
+
+.tcal-week-header-cell-date{
+	margin-left: 5px;
 }
 
 #ui-datepicker-div, .ui-button { 
@@ -100,7 +104,7 @@
 	float:left;
 }
 
-.tcal-month-day-cell{
+.tcal-month-day-cell, .tcal-week-halfhour-cell{
 	background-image: url("images/day-cell.png");
 	background-repeat:repeat-y;
 	background-color: #fff;
