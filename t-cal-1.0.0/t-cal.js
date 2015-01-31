@@ -5,6 +5,7 @@ $.widget("aekt.tcalendar", {
 		debug: false,
 		agenda: []
 	},
+	_millisec_day: 86400000,
 	_weekCellWidth: [0, 0, 0, 0, 0, 0, 0],
 	_weekNameFull: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 	_weekNameShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -212,7 +213,7 @@ $.widget("aekt.tcalendar", {
 		$(window).resize(function(e) { //setup grid size
 			var viewport_h = $(window).height();
 			var header_h = $header.height();
-			$grid.css("height", (viewport_h - header_h - 30) + "px");
+			$grid.css("height", (viewport_h - header_h - 40) + "px");
 			$this.dimensionfix();
 		}).resize();
 	},
@@ -313,6 +314,7 @@ $.widget("aekt.tcalendar", {
 	_onAgendaMouseEnter: function(srcObj) {
 		var $srcObj = $(srcObj);
 		this._trigger("agendaMouseEnter", null, [$(srcObj), this.getAgendaById($srcObj.data("id"))]);
+		this.dimensionfix();
 	},
 	_onAgendaMouseExit: function(srcObj) {
 		var $srcObj = $(srcObj);
@@ -396,6 +398,8 @@ $.widget("aekt.tcalendar", {
 		var $headerExt = this.element.find(".tcal-header-ext");
 		$headerExt.children().remove(); // clear header ext
 		//we need to generate a week header that marks out SUN to SAT
+		$headerExt.append($("<div/>", {"class": "tcal-week-label-cell", html : "&nbsp;"}).css("border", "none"));
+		$staticpanel.append($("<div/>", {"class": "tcal-week-label-cell", html : "<span class='tcal-week-label-text'></span>"}));
 		for (var i = 0; i < 7; i++) {
 			var $cell = $("<div/>", {
 				"class": "tcal-week-allday-cell"
@@ -410,55 +414,103 @@ $.widget("aekt.tcalendar", {
 		$headerExt.append($("<div/>", {
 			"style": "clear:both;"
 		})); //a empty div to clear the float
-		//we need to generate total of 7 cells
-		for (var i = 0; i < 336; i++) {
-			var $cell = $("<div/>", {
-				"class": "tcal-week-halfhour-cell"
-			});
+		//we need to generate total of 48x8 cells
+		var hour = 0;
+		for (var i = 0; i < 384; i++) {
+			var $cell;
+			if (i % 8 != 0){
+				$cell = $("<div/>", {
+					"class": "tcal-week-halfhour-cell"
+				});
+			}else{
+				if (i % 16 == 0){
+					if (hour < 10)
+						$cell = $("<div/>", {"class": "tcal-week-label-cell", html : "<span class='tcal-week-label-text'>0"+hour+":00</span>"}); 
+					else
+						$cell = $("<div/>", {"class": "tcal-week-label-cell", html : "<span class='tcal-week-label-text'>"+hour+":00</span>"});
+					hour = (hour+1) % 24;
+				}else{
+					$cell = $("<div/>", {"class": "tcal-week-label-cell"});
+				}
+			}
 			$staticpanel_content.append($cell);
 		}
+		$staticpanel_content.append($("<div/>").css("clear", "both"));
 	},
 	_weekDimension: function() {
 		var $_this = this;
 		var $grid = $_this.element.find(".tcal-grid");
+		$grid.css("width", $_this.element.width() - 20);
 		var $scrollpanel = $_this.element.find(".tcal-grid-week-scrollpanel");
 		var $staticpanel_content = $_this.element.find(".tcal-grid-week-content");
 		var $headerExt = this.element.find(".tcal-header-ext");
 		var actual_height = ($grid.height());
-		var actual_width = ($grid.width() + 14);
-		var cell_width = Math.trunc(actual_width / 7);
-		var cell_height = Math.trunc(actual_height * 1.5 / 48);
+		var label_width = 52;
+		var actual_width = ($grid.width() - label_width - 10);
+		var cell_width = Math.trunc(actual_width  / 7);
+		var cell_height = Math.trunc(actual_height * 2.5 / 48);
 		var first_n_last_cell_w = (actual_width - cell_width * 7) / 2 + cell_width;
-		$scrollpanel.css("width", (actual_width + 15)+"px").css("height", actual_height + "px");
-		$staticpanel_content.css("margin-top", cell_height * 2+"px")
+		$scrollpanel.css("width", ($grid.width()+15)).css("height", actual_height);
+		$staticpanel_content.css("margin-top", (cell_height * 4 - 1))
 		$headerExt.find(".tcal-week-header-cell").each(function(index) {
 			var mod = index % 7;
 			var $this = $(this);
 			if (mod == 6 || mod == 0)
-				$this.css("width", first_n_last_cell_w + "px");
+				$this.css("width", first_n_last_cell_w);
 			else
-				$this.css("width", cell_width + "px");
+				$this.css("width", cell_width);
+		});
+		$headerExt.find(".tcal-week-label-cell").css("width", label_width);
+		$scrollpanel.find(".tcal-week-label-cell").each(function(index){
+			var $this = $(this);
+			var actualIndex = index - 1;
+			$this.css("width", label_width).css("margin-right", "-1px");
+			if (actualIndex < 0){
+				$this.css("height", cell_height * 4);
+			}else{
+				if (actualIndex % 2 == 0){
+					$this.css("border-bottom", "none");
+				}else{
+					$this.css("border-top", "none");
+				}
+				$this.css("height", cell_height);
+			}
 		});
 		$scrollpanel.find(".tcal-week-allday-cell").each(function(index){
 			var mod = index % 7;
 			var $this = $(this);
 			if (mod == 6 || mod == 0)
-				$this.css("width", first_n_last_cell_w + "px");
+				$this.css("width", first_n_last_cell_w);
 			else
-				$this.css("width", cell_width + "px");
-			$this.css("height", cell_height * 2 + "px");
+				$this.css("width", cell_width);
+			$this.css("height", cell_height * 4);
+			if (mod == 6)
+				$this.css("border-right", "1px solid #dedede");
 		});
 		$scrollpanel.find(".tcal-week-halfhour-cell").each(function(index) {
 			var mod = index % 7;
 			var $this = $(this);
 			if (mod == 6 || mod == 0) {
-				$this.css("width", first_n_last_cell_w + "px");
+				$this.css("width", first_n_last_cell_w);
 				$_this._weekCellWidth[mod] = first_n_last_cell_w;
 			} else {
-				$this.css("width", cell_width + "px");
+				$this.css("width", cell_width);
 				$_this._weekCellWidth[mod] = cell_width;
 			}
-			$this.css("height", cell_height + "px");
+			$this.css("height", cell_height);
+			if (mod == 6)
+				$this.css("border-right", "1px solid #dedede");
+		});
+		$scrollpanel.find(".tcal-week-agenda").each(function(index) {
+			var mod = index % 7;
+			var $this = $(this);
+			if (mod == 6 || mod == 0) {
+				$this.css("width", first_n_last_cell_w - 5);
+				$_this._weekCellWidth[mod] = first_n_last_cell_w;
+			} else {
+				$this.css("width", cell_width - 5);
+				$_this._weekCellWidth[mod] = cell_width;
+			}
 		});
 	},
 	_weekDate: function() {
@@ -471,17 +523,215 @@ $.widget("aekt.tcalendar", {
 		var dateWeekday = $_this.options.date.getDay(); //get today's weekday
 		var dayCount = new Date(dateYear, dateMonth, dateDay - dateWeekday, 0, 0, 0, 0);
 		$headerExt.find(".tcal-week-header-cell-date").each(function(index, cell) {
+			var $this = $(this);
 			$(cell).html((dayCount.getMonth() + 1) + "/" + (dayCount.getDate()));
-			dayCount.setTime(dayCount.getTime() + 86400000);
+			if ($_this._isToday(dayCount)){
+				$this.addClass("tcal-week-today");
+			}else{
+				$this.removeClass("tcal-week-today");
+			}
+			dayCount.setTime(dayCount.getTime() + $_this._millisec_day);
+		});
+		$grid.find(".tcal-week-halfhour-cell, .tcal-week-allday-cell").each(function(){
+			var $this = $(this);
+			$this.removeClass("tcal-week-halfhour-allday");
+			$this.children().remove();
 		});
 	},
+	_weekPrev: function(){
+		this.options.date.setTime(this.options.date.getTime() - this._millisec_day * 7);
+	},
+	_weekNext: function(){
+		this.options.date.setTime(this.options.date.getTime() + this._millisec_day * 7);
+	},
+	_weekAgendaWidthOfIndex: function(dayOfWeek, days){
+		return this._monthAgendaWidthOfIndex(dayOfWeek, days);
+	},
 	_weekRefresh: function() {
-
+		var $this = this;
+		var dateMonth = $this.options.date.getMonth(); //get today's month
+		var dateYear = $this.options.date.getFullYear(); //get today's year
+		var dateWeekday = $this.options.date.getDay();
+		var dateDay = $this.options.date.getDate();
+		var firstDayOfWeek = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+		firstDayOfWeek.setTime(firstDayOfWeek.getTime() - $this._millisec_day * dateWeekday);
+		var dayAfterLastDayOfWeek = new Date(firstDayOfWeek.getTime() + $this._millisec_day * 7);
+		var $grid = $this.element.find(".tcal-grid");
+		$grid.find(".tcal-week-agenda").remove();
+		var $scrollpanel = $this.element.find(".tcal-grid-week-scrollpanel");
+		var $allDayCells = $scrollpanel.find(".tcal-week-allday-cell");
+		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
+			var startInRange = (agenda.startDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.startDate.getTime() >= firstDayOfWeek.getTime());
+			var endInRange = (agenda.endDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.endDate.getTime() > firstDayOfWeek.getTime());
+			return (startInRange || endInRange);
+		});
+		var markAllDay = function(date){
+			$scrollpanel.find(".tcal-week-halfhour-cell").each(function(index, cell){
+				if (index % 7 == date.getDay()){
+					$(cell).addClass("tcal-week-halfhour-allday");
+				}
+			});
+		};
+		//sort the filtered agenda by start date
+		filteredAgenda.sort($this._sortAgendaByDate);
+		var today = new Date();
+		$.each(filteredAgenda, function(index, agenda) {
+			var attr = {upToDate: null, firstday : null, startedHeight: 0};
+			//if startdate and end date are both within the same day
+			if ($this._isSameDay(agenda.startDate, agenda.endDate)){
+				if (agenda.allDay){
+					//if it's all day
+					var $div = $("<div/>", {"class" : "tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual"}).css("background-color", agenda.color);
+					var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
+					$div.append($label).css("width", $($allDayCells[agenda.startDate.getDay()]).width() - 5);
+					$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
+					markAllDay(agenda.startDate);
+					$div.click(function(e) {
+						$this._onAgendaClick(this);
+					}).hover(function() {
+						$this._onAgendaMouseEnter(this);
+					}, function() {
+						$this._onAgendaMouseExit(this);
+					});
+					//attach tooltip callback if exist
+					if ($this.options.agendaTooltip) {
+						$this.options.agendaTooltip($div, agenda);
+					}
+				}else{
+					//not all day, we place them on the respective location on the calendar
+					//we look for starting cell first
+					var attr = {column: agenda.startDate.getDay(), 
+								start_loc: {y : agenda.startDate.getMinutes() > 29 ? 1 : 0}, 
+								end_loc : {y : agenda.endDate.getMinutes() > 29 ? 1 : 0}};
+					attr.start_loc.y += (agenda.startDate.getHours() * 2);
+					attr.end_loc.y += (agenda.endDate.getHours() * 2);
+					var startIndex = attr.column + attr.start_loc.y  * 7;
+					var halfdayCells = $(".tcal-grid-week-content .tcal-week-halfhour-cell");
+					var $startCell =  $(halfdayCells[startIndex]);
+					if ($startCell.children().length > 0){
+						//has more than one agenda existing on the same time or prior
+					}else{
+						//just add into the cell
+						var $div = $("<div/>", {"class" : "tcal-week-agenda tcal-week-agenda-userd tcal-week-agenda-actual"})
+									.css("background-color", agenda.color);
+						var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
+						$div.append($label).css("width", ($startCell.width() - 5) / ($startCell.children().length + 1));
+						console.log($startCell);
+						console.log($div);
+						$div.css("margin-top", $startCell.height() / 30 * (agenda.startDate.getMinutes() % 30));
+						var numberCellHeight = (((agenda.endDate.getTime() - agenda.startDate.getTime()) / 1800000)); 
+						$div.css("height", $startCell.height() * numberCellHeight + (numberCellHeight - 1) * 2);
+						console.log((((agenda.endDate.getTime() - agenda.startDate.getTime()) / 1800000)));
+						$startCell.append($div);
+						//for every single ones that were added, we 
+						//attach click and hover function
+						$div.click(function(e) {
+							$this._onAgendaClick(this);
+						}).hover(function() {
+							$this._onAgendaMouseEnter(this);
+						}, function() {
+							$this._onAgendaMouseExit(this);
+						});
+						//attach tooltip callback if exist
+						if ($this.options.agendaTooltip) {
+							$this.options.agendaTooltip($div, agenda);
+						}
+					}
+				}
+			}else{
+				//they span out across multiple days
+				//we put a cross multiple day all day block and highlight the background
+				var $div;
+				var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
+				var cellChildren = $($allDayCells[agenda.startDate.getDay()]).children();
+				//figure out if we have spots available
+				if (cellChildren.length > 0) {
+					//there is something existing already
+					$.each(cellChildren, function(height, child) {
+						if ($(child).hasClass("tcal-week-allday-agenda-used"))
+							attr.startedHeight = height + 1;
+						else {
+							return false;
+						}
+					});
+					//at this point startedHeight would be the height that the cell should be in
+					if (cellChildren.length > attr.startedHeight) {
+						$div = $(cellChildren[attr.startedHeight]);
+					} else {
+						$div = $("<div/>");
+						$($allDayCells[agenda.startDate.getDay()]).append($div);
+					}
+				} else {
+					$div = $("<div/>"); //the div for agenda
+					$($allDayCells[agenda.startDate.getDay()]).append($div);
+				}
+				$div.addClass("tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual").css("background-color", agenda.color);
+				$div.click(function(e) {
+					$this._onAgendaClick(this);
+				}).hover(function() {
+					$this._onAgendaMouseEnter(this);
+				}, function() {
+					$this._onAgendaMouseExit(this);
+				});
+				//attach tooltip callback if exist
+				if ($this.options.agendaTooltip) {
+					$this.options.agendaTooltip($div, agenda);
+				}
+				attr.firstday = new Date(agenda.startDate.getFullYear(), agenda.startDate.getMonth(), agenda.startDate.getDate(), 0, 0, 0, 0); 
+				var dayLength = 0;
+				if (agenda.endDate.getTime() < dayAfterLastDayOfWeek){ 
+					attr.upToDate = new Date(agenda.endDate.getFullYear(), agenda.endDate.getMonth(), agenda.endDate.getDate(), 0, 0, 0, 0);
+					attr.upToDate.setTime(attr.upToDate.getTime() + $this._millisec_day);
+				}else{
+					attr.upToDate = new Date(dayAfterLastDayOfWeek.getTime());
+				}
+				dayLength = Math.trunc((attr.upToDate.getTime() - attr.firstday.getTime()) / $this._millisec_day);
+				$div.css("width", $this._weekAgendaWidthOfIndex(attr.firstday.getDay(), dayLength) - 5);
+				$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
+				markAllDay(attr.firstday);
+				var dateCounter = new Date(attr.firstday.getTime());
+				for (; dateCounter.getTime() < attr.upToDate.getTime(); dateCounter.setTime(dateCounter.getTime() + $this._millisec_day)){
+					var theDayCell = $($allDayCells[dateCounter.getDay()]);
+					if (theDayCell.children().length <= attr.startedHeight){
+						for (var i = theDayCell.children().length; i <= attr.startedHeight; i++){
+							theDayCell.append($("<div/>", {"class" : "tcal-week-allday-agenda tcal-week-allday-agenda-used"}).css("width", theDayCell.width() - 5));
+						}
+					}else{
+						$(theDayCell.children()[attr.startedHeight]).addClass("tcal-week-allday-agenda-used");
+					}
+					theDayCell.addClass("tcal-week-halfhour-allday");
+					markAllDay(dateCounter);
+				}
+				//put place holder
+				var start = $("<div/>", {"class" : "tcal-week-agenda-allday-start-time"});
+				if (firstDayOfWeek.getTime() <= agenda.startDate.getTime()){
+					//add start time
+					var hour = agenda.startDate.getHours();
+					var minute = agenda.startDate.getMinutes();
+					start.html(((hour < 10)?"0" + hour : hour) + ":"+((minute < 10)? "0" + minute : minute));
+				}else{
+					start.addClass("tcal-week-not-start-here");
+				}
+				
+				var end = $("<div/>", {"class" : "tcal-week-agenda-allday-end-time"});
+				if (dayAfterLastDayOfWeek.getTime() > agenda.endDate.getTime()){
+					//add end time
+					var hour = agenda.endDate.getHours();
+					var minute = agenda.endDate.getMinutes();
+					end.html(((hour < 10)?"0" + hour : hour) + ":"+((minute < 10)? "0" + minute : minute));
+				}else{
+					end.addClass("tcal-week-not-end-here");
+				}
+				$div.append(start).append($label).append(end);
+			}
+		});
 	},
 	//main utility private function for month view
 	_monthGrid: function() {
 		var $grid = this.element.find(".tcal-grid");
 		$grid.children().remove(); //clear the grid
+		var $innerGrid = $("<div/>", {"class" : "tcal-month-inner-grid"});
+		$grid.append($innerGrid);
 		var $headerExt = this.element.find(".tcal-header-ext");
 		//clear headerExt
 		$headerExt.children().remove();
@@ -493,9 +743,7 @@ $.widget("aekt.tcalendar", {
 			});
 			$headerExt.append($cell);
 		}
-		$headerExt.append($("<div/>", {
-			"style": "clear:both;"
-		})); //a empty div to clear the float
+		$headerExt.append($("<div/>", {"class": "tcal-clearer"})); //a empty div to clear the float
 		//we need to generate total of 42 cells: 7 x 6 to encapsulate all days of any given month
 		for (var i = 0; i < 42; i++) {
 			var $cell = $("<div/>", {
@@ -509,15 +757,19 @@ $.widget("aekt.tcalendar", {
 				"class": "tcal-month-day-cell-content"
 			});
 			$cell.append($dayheader).append($daycontent);
-			$grid.append($cell);
+			$innerGrid.append($cell);
 		}
+		$innerGrid.append($("<div/>", {"class": "tcal-clearer"}));
 	},
 	_monthDimension: function() {
 		var $_this = this;
 		var $grid = $_this.element.find(".tcal-grid");
+		var $innerGrid = $grid.find(".tcal-month-inner-grid");
+		$grid.css("width", $_this.element.width() - 20);
+		$innerGrid.css("width", $_this.element.width() - 12);
 		var $headerExt = this.element.find(".tcal-header-ext");
 		var actual_height = ($grid.height());
-		var actual_width = ($grid.width() + 14);
+		var actual_width = ($innerGrid.width());
 		var cell_width = Math.trunc(actual_width / 7);
 		var cell_height = Math.trunc(actual_height / 6);
 		var first_n_last_cell_w = (actual_width - cell_width * 7) / 2 + cell_width;
@@ -532,6 +784,8 @@ $.widget("aekt.tcalendar", {
 				$this.css("width", cell_width + "px");
 				$_this._weekCellWidth[mod] = cell_width;
 			}
+			if (mod == 6)
+				$this.css("border-right", "1px solid #dedede");
 			if (index > 34)
 				$this.css("height", last_row_cell_height + "px");
 			else
@@ -560,7 +814,7 @@ $.widget("aekt.tcalendar", {
 		var firstDayOfMonth = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
 		var firstDayOfMonth_week = firstDayOfMonth.getDay();
 		var cellDate = new Date();
-		cellDate.setTime(firstDayOfMonth.getTime() - (86400000 * ((firstDayOfMonth_week))));
+		cellDate.setTime(firstDayOfMonth.getTime() - ($this._millisec_day * ((firstDayOfMonth_week))));
 		$header.find(".tcal-header-primary-title").html($this._monthNameFull[dateMonth]);
 		$header.find(".tcal-header-secondary-title").html(dateYear);
 		$grid.find(".tcal-month-day-cell").each(function(index) {
@@ -579,7 +833,7 @@ $.widget("aekt.tcalendar", {
 			} else {
 				$c_this.removeClass("tcal-month-today");
 			}
-			cellDate.setTime(cellDate.getTime() + 86400000);
+			cellDate.setTime(cellDate.getTime() + $this._millisec_day);
 		});
 	},
 	_monthNext: function() {
@@ -611,8 +865,8 @@ $.widget("aekt.tcalendar", {
 		var dateMonth = $this.options.date.getMonth(); //get today's month
 		var dateYear = $this.options.date.getFullYear(); //get today's year
 		var firstDayOfMonth = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
-		var firstDayOfCalendar = new Date(firstDayOfMonth.getTime() - 86400000 * firstDayOfMonth.getDay());
-		var lastDayOfCalendar = new Date(firstDayOfCalendar.getTime() + 86400000 * 42);
+		var firstDayOfCalendar = new Date(firstDayOfMonth.getTime() - $this._millisec_day * firstDayOfMonth.getDay());
+		var lastDayOfCalendar = new Date(firstDayOfCalendar.getTime() + $this._millisec_day * 42);
 		var $grid = $this.element.find(".tcal-grid");
 		$grid.find(".tcal-month-agenda").remove();
 		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
@@ -681,11 +935,11 @@ $.widget("aekt.tcalendar", {
 						$this.options.agendaTooltip($div, agenda);
 					}
 					//difference
-					attr.upToDate = new Date(counterDate.getTime() + (7 - counterDate.getDay()) * 86400000);
+					attr.upToDate = new Date(counterDate.getTime() + (7 - counterDate.getDay()) * $this._millisec_day);
 					if (attr.upToDate.getTime() > agenda.endDate) {
 						attr.upToDate = new Date(agenda.endDate.getFullYear(), agenda.endDate.getMonth(), agenda.endDate.getDate() + 1, 0, 0, 0, 0);
 					}
-					var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / 86400000);
+					var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / $this._millisec_day);
 					//console.log(range);
 					$div.data("days", range);
 					$div.data("weekday", counterDate.getDay());
@@ -717,7 +971,7 @@ $.widget("aekt.tcalendar", {
 						}
 					} else if (counterDate.getTime() == attr.upToDate.getTime()) {
 						//find the new upToTime
-						attr.upToDate = new Date(counterDate.getTime() + (7 - counterDate.getDay()) * 86400000);
+						attr.upToDate = new Date(counterDate.getTime() + (7 - counterDate.getDay()) * $this._millisec_day);
 						if (attr.upToDate.getTime() > agenda.endDate) {
 							attr.upToDate = new Date(agenda.endDate.getFullYear(), agenda.endDate.getMonth(), agenda.endDate.getDate() + 1, 0, 0, 0, 0);
 						}
@@ -747,7 +1001,7 @@ $.widget("aekt.tcalendar", {
 								html: "<"
 							}).css("height", "100%");
 							$div.append($continueContainer);
-							var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / 86400000);
+							var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / $this._millisec_day);
 							$div.data("days", range);
 							$div.data("weekday", counterDate.getDay());
 							$div.data("id", agenda.id);
@@ -761,7 +1015,7 @@ $.widget("aekt.tcalendar", {
 						}
 					}
 				}
-				counterDate.setTime(counterDate.getTime() + 86400000);
+				counterDate.setTime(counterDate.getTime() + $this._millisec_day);
 			});
 		});
 	}

@@ -14,10 +14,11 @@
 
 .tcal-grid{
 	margin: 0px 10px 2px;
-	border: 1px solid #dedede;
+	/*border: 1px solid #dedede;*/
 	box-sizing: border-box;
 	padding:0px 1px;
 	overflow: hidden;
+	width:100%;
 }
 
 .tcal-header > .ui-menu{
@@ -52,6 +53,9 @@
 	position:relative;
 	box-sizing: border-box;
 	padding: 5px;
+}
+.tcal-clearer{
+	clear:both;
 }
 
 .tcal-header-title-container{
@@ -111,7 +115,7 @@
 	float:left;
 }
 
-.tcal-month-day-cell, .tcal-week-halfhour-cell, .tcal-week-allday-cell{
+.tcal-month-day-cell, .tcal-week-halfhour-cell, .tcal-week-allday-cell, .tcal-week-label-cell{
 	background-image: url("images/day-cell.png");
 	background-repeat:repeat-y;
 	background-color: #fff;
@@ -127,6 +131,10 @@
 	margin: 0px -1px;
 	overflow: visible;
 	opcaity: .99;
+}
+
+.tcal-grid-week-alldaypanel{
+	z-index: 2;
 }
 
 .tcal-month-today.tcal-month-day-cell{
@@ -157,27 +165,44 @@
 .tcal-month-different-month .tcal-month-day-cell-header-day{
 	color: #bbb;
 }
-.tcal-month-agenda {
+.tcal-month-agenda, .tcal-week-allday-agenda, .tcal-week-agenda{
 	height: 20%;
 	min-height: 20px;
+	max-height: 24px;
 	float:left;
 	margin:2px 2px 0px 2px;
 	box-sizing: border-box;
 	text-align:center;
 	border-radius: 5px;
+	position: relative;
+	z-index:4;
 }
 
-.tcal-month-agenda-actual{
+.tcal-month-agenda-actual, .tcal-week-allday-actual{
 	background-image: url("images/month-agenda-spirit.png");
 	background-size: auto 100%;
 	background-repeast: repeat-x;
 	text-align:center;
+	z-index: 5;
 	position:relative;
-	z-index: 1;
 	cursor: pointer;
+	border-sizing: box-border;
 }
 
-.tcal-month-agenda-title{
+.tcal-week-halfhour-cell .tcal-week-agenda-actual{
+	z-index: 1;
+}
+
+.tcal-week-agenda-actual{
+	text-align:center;
+	z-index: 5;
+	position:relative;
+	cursor: pointer;
+	border-sizing: box-border;
+	max-height: none;
+}
+
+.tcal-month-agenda-title, .tcal-week-agenda-title{
 	font-size: 12px;
 	font-family: Arial, Verdana;
 	padding:2px;
@@ -207,7 +232,7 @@
     height: 0;
 }
 
-.tcal-month-today .tcal-month-day-cell-header-day:after{
+.tcal-month-today .tcal-month-day-cell-header-day:after, .tcal-week-header-cell .tcal-week-today:after{
  	border-bottom: 5px solid transparent;
     border-right: 9px solid red;
     border-top: 5px solid transparent;
@@ -216,3 +241,52 @@
     height: 0;
 }
 
+.tcal-week-label-cell{
+	text-align: right;
+	padding-right: 5px;
+}
+
+.tcal-week-label-text{
+	font-family: Arial, Verdana;
+	font-size: 12px;
+}
+
+.tcal-week-allday-cell{
+	padding-left: 0px;
+}
+
+.tcal-week-halfhour-allday{
+	background-color: #FFE4E1;
+}
+
+.tcal-week-agenda-allday-start-time{
+	font-family: Arial, Verdana;
+	font-size: 12px;
+	float:left;
+	margin: 5px;
+}
+
+.tcal-week-agenda-allday-end-time{
+	font-family: Arial, Verdana;
+	font-size: 12px;
+	float:right;
+	margin: 5px;
+}
+
+.tcal-week-not-start-here:before{
+ 	border-bottom: 5px solid transparent;
+    border-right: 9px solid #333;
+    border-top: 5px solid transparent;
+    content: " ";
+    display: inline-block;
+    height: 0;
+}
+
+.tcal-week-not-end-here:after{
+ 	border-bottom: 5px solid transparent;
+    border-left: 9px solid #333;
+    border-top: 5px solid transparent;
+    content: " ";
+    display: inline-block;
+    height: 0;
+}
