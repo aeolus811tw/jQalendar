@@ -10,6 +10,7 @@
 .tcal-header > .ui-menu{
 	position:absolute;
 	width:100px;
+	z-index: 500;
 }
 
 .tcal-grid{

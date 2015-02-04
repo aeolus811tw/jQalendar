@@ -501,14 +501,25 @@ $.widget("aekt.tcalendar", {
 			if (mod == 6)
 				$this.css("border-right", "1px solid #dedede");
 		});
-		$scrollpanel.find(".tcal-week-agenda").each(function(index) {
+		$scrollpanel.find(".tcal-week-agenda-actual").each(function(index) {
 			var mod = index % 7;
 			var $this = $(this);
+			var $startCell = $this.parent();
+			var attr = $this.data("width");
+			var marginTop = $startCell.height() / 30 * attr.marginTopOffset;
 			if (mod == 6 || mod == 0) {
-				$this.css("width", first_n_last_cell_w - 5);
+				var width_pixel = (first_n_last_cell_w - 5 - attr.intersectCount * 4) / attr.intersectCount;
+				$this.css("width", width_pixel)
+				     .css("margin-top", marginTop) 					//set the margin based on time offset
+				     .css("height", $startCell.height() * attr.numberCellHeight + (attr.numberCellHeight - 1) * 2) //set the height of the agenda
+				     .css("margin-left", attr.startedWidthUnit * width_pixel + 4);
 				$_this._weekCellWidth[mod] = first_n_last_cell_w;
 			} else {
-				$this.css("width", cell_width - 5);
+				var width_pixel = (cell_width - 5 - attr.intersectCount * 4) / attr.intersectCount;
+				$this.css("width", width_pixel)
+				     .css("margin-top", marginTop) 					//set the margin based on time offset
+				     .css("height", $startCell.height() * attr.numberCellHeight + (attr.numberCellHeight - 1) * 2) //set the height of the agenda
+				     .css("margin-left", attr.startedWidthUnit * width_pixel + 4);
 				$_this._weekCellWidth[mod] = cell_width;
 			}
 		});
@@ -560,10 +571,17 @@ $.widget("aekt.tcalendar", {
 		$grid.find(".tcal-week-agenda").remove();
 		var $scrollpanel = $this.element.find(".tcal-grid-week-scrollpanel");
 		var $allDayCells = $scrollpanel.find(".tcal-week-allday-cell");
+		var sameDayAgenda = [];
+		var halfdayCells = $(".tcal-grid-week-content .tcal-week-halfhour-cell");
 		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
 			var startInRange = (agenda.startDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.startDate.getTime() >= firstDayOfWeek.getTime());
 			var endInRange = (agenda.endDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.endDate.getTime() > firstDayOfWeek.getTime());
-			return (startInRange || endInRange);
+			if ($this._isSameDay(agenda.startDate, agenda.endDate) && agenda.allDay == false){
+				sameDayAgenda.push(agenda);
+				return false;
+			}else{
+				return (startInRange || endInRange);
+			}
 		});
 		var markAllDay = function(date){
 			$scrollpanel.find(".tcal-week-halfhour-cell").each(function(index, cell){
@@ -574,76 +592,42 @@ $.widget("aekt.tcalendar", {
 		};
 		//sort the filtered agenda by start date
 		filteredAgenda.sort($this._sortAgendaByDate);
+		sameDayAgenda.sort($this._sortAgendaByDate);
 		var today = new Date();
 		$.each(filteredAgenda, function(index, agenda) {
 			var attr = {upToDate: null, firstday : null, startedHeight: 0};
 			//if startdate and end date are both within the same day
 			if ($this._isSameDay(agenda.startDate, agenda.endDate)){
-				if (agenda.allDay){
-					//if it's all day
-					var $div = $("<div/>", {"class" : "tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual"}).css("background-color", agenda.color);
-					var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
-					$div.append($label).css("width", $($allDayCells[agenda.startDate.getDay()]).width() - 5);
-					$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
-					markAllDay(agenda.startDate);
-					$div.click(function(e) {
-						$this._onAgendaClick(this);
-					}).hover(function() {
-						$this._onAgendaMouseEnter(this);
-					}, function() {
-						$this._onAgendaMouseExit(this);
-					});
-					//attach tooltip callback if exist
-					if ($this.options.agendaTooltip) {
-						$this.options.agendaTooltip($div, agenda);
-					}
-				}else{
-					//not all day, we place them on the respective location on the calendar
-					//we look for starting cell first
-					var attr = {column: agenda.startDate.getDay(), 
-								start_loc: {y : agenda.startDate.getMinutes() > 29 ? 1 : 0}, 
-								end_loc : {y : agenda.endDate.getMinutes() > 29 ? 1 : 0}};
-					attr.start_loc.y += (agenda.startDate.getHours() * 2);
-					attr.end_loc.y += (agenda.endDate.getHours() * 2);
-					var startIndex = attr.column + attr.start_loc.y  * 7;
-					var halfdayCells = $(".tcal-grid-week-content .tcal-week-halfhour-cell");
-					var $startCell =  $(halfdayCells[startIndex]);
-					if ($startCell.children().length > 0){
-						//has more than one agenda existing on the same time or prior
-					}else{
-						//just add into the cell
-						var $div = $("<div/>", {"class" : "tcal-week-agenda tcal-week-agenda-userd tcal-week-agenda-actual"})
-									.css("background-color", agenda.color);
-						var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
-						$div.append($label).css("width", ($startCell.width() - 5) / ($startCell.children().length + 1));
-						console.log($startCell);
-						console.log($div);
-						$div.css("margin-top", $startCell.height() / 30 * (agenda.startDate.getMinutes() % 30));
-						var numberCellHeight = (((agenda.endDate.getTime() - agenda.startDate.getTime()) / 1800000)); 
-						$div.css("height", $startCell.height() * numberCellHeight + (numberCellHeight - 1) * 2);
-						console.log((((agenda.endDate.getTime() - agenda.startDate.getTime()) / 1800000)));
-						$startCell.append($div);
-						//for every single ones that were added, we 
-						//attach click and hover function
-						$div.click(function(e) {
-							$this._onAgendaClick(this);
-						}).hover(function() {
-							$this._onAgendaMouseEnter(this);
-						}, function() {
-							$this._onAgendaMouseExit(this);
-						});
-						//attach tooltip callback if exist
-						if ($this.options.agendaTooltip) {
-							$this.options.agendaTooltip($div, agenda);
-						}
-					}
+				//it can only be all day because we have filtered out the same day but not all day in this list
+				//if it's all day
+				var $div = $("<div/>", {"class" : "tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual"}).css("background-color", agenda.color);
+				var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
+				$div.append($label).css("width", $($allDayCells[agenda.startDate.getDay()]).width() - 5);
+				$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
+				markAllDay(agenda.startDate);
+				$div.click(function(e) {
+					$this._onAgendaClick(this);
+				}).hover(function() {
+					$this._onAgendaMouseEnter(this);
+				}, function() {
+					$this._onAgendaMouseExit(this);
+				});
+				//attach tooltip callback if exist
+				if ($this.options.agendaTooltip) {
+					$this.options.agendaTooltip($div, agenda);
 				}
 			}else{
 				//they span out across multiple days
 				//we put a cross multiple day all day block and highlight the background
+				var attr = {startedHeight: 0, 
+							firstday : null};
 				var $div;
 				var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
-				var cellChildren = $($allDayCells[agenda.startDate.getDay()]).children();
+				attr.firstday = new Date(agenda.startDate.getFullYear(), agenda.startDate.getMonth(), agenda.startDate.getDate(), 0, 0, 0, 0);
+				if (attr.firstday.getTime() < firstDayOfWeek.getTime()){
+					attr.firstday.setTime(firstDayOfWeek.getTime());
+				}
+				var cellChildren = $($allDayCells[attr.firstday.getDay()]).children();
 				//figure out if we have spots available
 				if (cellChildren.length > 0) {
 					//there is something existing already
@@ -659,11 +643,11 @@ $.widget("aekt.tcalendar", {
 						$div = $(cellChildren[attr.startedHeight]);
 					} else {
 						$div = $("<div/>");
-						$($allDayCells[agenda.startDate.getDay()]).append($div);
+						$($allDayCells[attr.firstday.getDay()]).append($div);
 					}
 				} else {
 					$div = $("<div/>"); //the div for agenda
-					$($allDayCells[agenda.startDate.getDay()]).append($div);
+					$($allDayCells[attr.firstday.getDay()]).append($div);
 				}
 				$div.addClass("tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual").css("background-color", agenda.color);
 				$div.click(function(e) {
@@ -677,7 +661,6 @@ $.widget("aekt.tcalendar", {
 				if ($this.options.agendaTooltip) {
 					$this.options.agendaTooltip($div, agenda);
 				}
-				attr.firstday = new Date(agenda.startDate.getFullYear(), agenda.startDate.getMonth(), agenda.startDate.getDate(), 0, 0, 0, 0); 
 				var dayLength = 0;
 				if (agenda.endDate.getTime() < dayAfterLastDayOfWeek){ 
 					attr.upToDate = new Date(agenda.endDate.getFullYear(), agenda.endDate.getMonth(), agenda.endDate.getDate(), 0, 0, 0, 0);
@@ -687,7 +670,7 @@ $.widget("aekt.tcalendar", {
 				}
 				dayLength = Math.trunc((attr.upToDate.getTime() - attr.firstday.getTime()) / $this._millisec_day);
 				$div.css("width", $this._weekAgendaWidthOfIndex(attr.firstday.getDay(), dayLength) - 5);
-				$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
+				$($allDayCells[attr.firstday.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
 				markAllDay(attr.firstday);
 				var dateCounter = new Date(attr.firstday.getTime());
 				for (; dateCounter.getTime() < attr.upToDate.getTime(); dateCounter.setTime(dateCounter.getTime() + $this._millisec_day)){
@@ -723,6 +706,61 @@ $.widget("aekt.tcalendar", {
 					end.addClass("tcal-week-not-end-here");
 				}
 				$div.append(start).append($label).append(end);
+			}
+		});
+		//now we do the same day but not all day agenda
+		$.each(sameDayAgenda, function(index, agenda){
+			//for each agenda we get a list of agenda that is intersecting the agenda so we get the width
+			var attr = {column: agenda.startDate.getDay(), 
+					start_loc: {y : agenda.startDate.getMinutes() > 29 ? 1 : 0}, 
+					end_loc : {y : agenda.endDate.getMinutes() > 29 ? 1 : 0},
+					started: false,
+					startedWidthUnit: 0,
+					intersectCount: 0,
+					numberCellHeight: 0,
+					marginTopOffset: agenda.startDate.getMinutes() % 30};
+			attr.start_loc.y += (agenda.startDate.getHours() * 2);
+			attr.end_loc.y += (agenda.endDate.getHours() * 2);
+			var startIndex = attr.column + attr.start_loc.y  * 7;
+			var $startCell =  $(halfdayCells[startIndex]);
+			attr.numberCellHeight = (((agenda.endDate.getTime() - agenda.startDate.getTime()) / 1800000));
+			var intersects = $.grep(sameDayAgenda, function(_agenda, _index){
+				var startAfter = false;
+				var endBefore = false;
+				if (_agenda.startDate.getTime() >= agenda.endDate.getTime()){
+					startAfter = true;
+				}
+				if (_agenda.endDate.getTime() <= agenda.startDate.getTime()){
+					endBefore = true;
+				}
+				if (endBefore == startAfter && _index < index) attr.startedWidthUnit++;
+				return (endBefore == startAfter); //impossible for both to be true, the only case that we have them to be equal is when intersection occured
+			});
+			//length of the intersects is the width
+			attr.intersectCount = intersects.length;
+			var marginTop = $startCell.height() / 30 * attr.marginTopOffset;
+			var widthOffset = (attr.startedWidthUnit - 1 < 0)? 0 : attr.startedWidthUnit - 1;
+			var width_pixel = ($startCell.width() - (widthOffset) * 4 - 5) / intersects.length;
+			var $div = $("<div/>", {"class" : "tcal-week-agenda tcal-week-agenda-used tcal-week-agenda-actual"})
+					   .css("background-color", agenda.color)
+					   .css("width", width_pixel)
+					   .data("width", attr)			//now we mark the width on the cell
+					   .css("margin-top", marginTop) 					//set the margin based on time offset
+					   .css("height", $startCell.height() * attr.numberCellHeight + (attr.numberCellHeight - 1) * 2) //set the height of the agenda
+					   .css("margin-left", attr.startedWidthUnit * width_pixel + 4);
+			var $label = $("<div/>", {html: agenda.title, "class": "tcal-week-agenda-title"});
+			$div.append($label);
+			$startCell.append($div);
+			$div.click(function(e) {
+				$this._onAgendaClick(this);
+			}).hover(function() {
+				$this._onAgendaMouseEnter(this);
+			}, function() {
+				$this._onAgendaMouseExit(this);
+			});
+			//attach tooltip callback if exist
+			if ($this.options.agendaTooltip) {
+				$this.options.agendaTooltip($div, agenda);
 			}
 		});
 	},
