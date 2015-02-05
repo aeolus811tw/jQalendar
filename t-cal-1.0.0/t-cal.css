@@ -90,15 +90,15 @@
 	box-sizing: border-box;
 }
 
-.tcal-grid-week-scrollpanel{
+.tcal-grid-week-scrollpanel, .tcal-grid-day-scrollpanel{
 	position:relative;
 }
 
-.tcal-header-ext .tcal-month-week-cell, .tcal-week-header-cell, .tcal-week-allday-cell{
+.tcal-header-ext .tcal-month-week-cell, .tcal-week-header-cell, .tcal-week-allday-cell, .tcal-day-header-cell, .tcal-day-allday-cell{
 	float:left;
     box-sizing: border-box;
     display: inline-block;
-    margin: 0 -1px;
+/*    margin: 0 -1px; */
     font-family: Arial, Verdana;
     font-size: 12px;
     padding-left: 5px;
@@ -116,7 +116,7 @@
 	float:left;
 }
 
-.tcal-month-day-cell, .tcal-week-halfhour-cell, .tcal-week-allday-cell, .tcal-week-label-cell{
+.tcal-month-day-cell, .tcal-week-halfhour-cell, .tcal-week-allday-cell, .tcal-week-label-cell, .tcal-day-halfhour-cell, .tcal-day-allday-cell, .tcal-day-label-cell{
 	background-image: url("images/day-cell.png");
 	background-repeat:repeat-y;
 	background-color: #fff;
@@ -129,13 +129,19 @@
 	border-left:none;
 	border-right:none;
 	box-sizing:border-box;
-	margin: 0px -1px;
+/*	margin: 0px -1px; */
 	overflow: visible;
 	opcaity: .99;
 }
 
-.tcal-grid-week-alldaypanel{
-	z-index: 2;
+.tcal-grid-week-alldaypanel, .tcal-grid-day-alldaypanel{
+	z-index: 3;
+	background:white;
+}
+
+.tcal-grid-week-content{
+	position:relative;
+	z-index: 1;
 }
 
 .tcal-month-today.tcal-month-day-cell{
@@ -166,7 +172,7 @@
 .tcal-month-different-month .tcal-month-day-cell-header-day{
 	color: #bbb;
 }
-.tcal-month-agenda, .tcal-week-allday-agenda, .tcal-week-agenda{
+.tcal-month-agenda, .tcal-week-allday-agenda, .tcal-week-agenda, .tcal-day-allday-agenda, .tcal-day-agenda{
 	height: 20%;
 	min-height: 20px;
 	max-height: 24px;
@@ -179,7 +185,7 @@
 	z-index:4;
 }
 
-.tcal-month-agenda-actual, .tcal-week-allday-actual{
+.tcal-month-agenda-actual, .tcal-week-allday-actual, .tcal-day-allday-actual{
 	background-image: url("images/month-agenda-spirit.png");
 	background-size: auto 100%;
 	background-repeast: repeat-x;
@@ -190,11 +196,11 @@
 	border-sizing: box-border;
 }
 
-.tcal-week-halfhour-cell .tcal-week-agenda-actual{
+.tcal-week-halfhour-cell .tcal-week-agenda-actual, .tcal-day-halfhour-cell .tcal-day-agenda-actual{
 	z-index: 1;
 }
 
-.tcal-week-agenda-actual{
+.tcal-week-agenda-actual, .tcal-day-agenda-actual{
 	text-align:center;
 	z-index: 5;
 	position:relative;
@@ -203,7 +209,7 @@
 	max-height: none;
 }
 
-.tcal-month-agenda-title, .tcal-week-agenda-title{
+.tcal-month-agenda-title, .tcal-week-agenda-title, .tcal-day-agenda-title{
 	font-size: 12px;
 	font-family: Arial, Verdana;
 	padding:2px;
@@ -233,7 +239,7 @@
     height: 0;
 }
 
-.tcal-month-today .tcal-month-day-cell-header-day:after, .tcal-week-header-cell .tcal-week-today:after{
+.tcal-month-today .tcal-month-day-cell-header-day:after, .tcal-week-header-cell .tcal-week-today:after, .tcal-day-header-cell .tcal-day-today:after{
  	border-bottom: 5px solid transparent;
     border-right: 9px solid red;
     border-top: 5px solid transparent;
@@ -242,39 +248,47 @@
     height: 0;
 }
 
-.tcal-week-label-cell{
+.tcal-week-halfhour-cell, .tcal-week-allday-cell, .tcal-week-label-cell, .tcal-day-halfhour-cell, .tcal-day-allday-cell, .tcal-day-label-cell{
+	background: none transparent;
+}
+
+.tcal-week-halfhour-cell, .tcal-week-allday-cell, .tcal-week-label-cell, .tcal-day-halfhour-cell, .tcal-day-label-cell{
+	border-right: 1px solid #dedede;
+}
+
+.tcal-week-label-cell, .tcal-day-label-cell{
 	text-align: right;
 	padding-right: 5px;
 }
 
-.tcal-week-label-text{
+.tcal-week-label-text, .tcal-day-label-text{
 	font-family: Arial, Verdana;
 	font-size: 12px;
 }
 
-.tcal-week-allday-cell{
+.tcal-week-allday-cell, .tcal-day-allday-cell{
 	padding-left: 0px;
 }
 
-.tcal-week-halfhour-allday{
+.tcal-week-halfhour-allday, .tcal-day-halfhour-allday{
 	background-color: #FFE4E1;
 }
 
-.tcal-week-agenda-allday-start-time{
+.tcal-week-agenda-allday-start-time, .tcal-day-agenda-allday-start-time{
 	font-family: Arial, Verdana;
 	font-size: 12px;
 	float:left;
 	margin: 5px;
 }
 
-.tcal-week-agenda-allday-end-time{
+.tcal-week-agenda-allday-end-time, .tcal-day-agenda-allday-end-time{
 	font-family: Arial, Verdana;
 	font-size: 12px;
 	float:right;
 	margin: 5px;
 }
 
-.tcal-week-not-start-here:before{
+.tcal-week-not-start-here:before, .tcal-day-not-start-here:before{
  	border-bottom: 5px solid transparent;
     border-right: 9px solid #333;
     border-top: 5px solid transparent;
@@ -283,7 +297,7 @@
     height: 0;
 }
 
-.tcal-week-not-end-here:after{
+.tcal-week-not-end-here:after, .tcal-day-not-end-here:after{
  	border-bottom: 5px solid transparent;
     border-left: 9px solid #333;
     border-top: 5px solid transparent;
