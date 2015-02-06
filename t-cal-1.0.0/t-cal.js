@@ -7,6 +7,8 @@ $.widget("aekt.tcalendar", {
 	},
 	_millisec_day: 86400000,
 	_weekCellWidth: [0, 0, 0, 0, 0, 0, 0],
+	_todayDatePicker: null,
+	_modeChanger: null,
 	_weekNameFull: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 	_weekNameShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	_monthNameFull: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -60,7 +62,10 @@ $.widget("aekt.tcalendar", {
 			name: "Agenda",
 			func: {
 				grid: "_agendaGrid",
-				refresh: "_agendaRefresh"
+				dimension: "_agendaDimension",
+				refresh: "_agendaRefresh",
+				next: "_agendaNext",
+				prev: "_agendaPrev"
 			}
 		}
 	},
@@ -113,11 +118,11 @@ $.widget("aekt.tcalendar", {
 			$this.refresh();
 			$this._trigger("today");
 		});
-		var $todayField = $("<input/>", {
+		this._todayDatePicker = $("<input/>", {
 			'class': 'tcal-today-field',
 			placeholder: 'MM/DD/YYYY'
 		});
-		$todayField.datepicker({
+		this._todayDatePicker.datepicker({
 			constrainInput: true,
 			dateFormat: "mm/dd/yy",
 			numberOfMonths: 1,
@@ -141,7 +146,7 @@ $.widget("aekt.tcalendar", {
 		$this.element.append($header).append(headerExt).append($grid); //compose the structure
 
 		//setup mode changer
-		var $modechanger = $("<span/>", {
+		$this._modeChanger = $("<span/>", {
 			"class": "tcal-header-modechanger",
 			id: "tcal-header-modechanger-" + index,
 			html: ""
@@ -150,26 +155,23 @@ $.widget("aekt.tcalendar", {
 			var $input = $("<input/>", {
 				type: "radio",
 				id: "tcal-header-" + index + "-" + i,
-				name: "tcal-header-" + index + "-modechanger"
+				name: "tcal-header-" + index + "-modechanger",
+				value: i
 			}).data("mode", i);
 			var $label = $("<label/>", {
 				"for": "tcal-header-" + index + "-" + i,
 				html: $this._mode[i].name
 			});
-			$modechanger.append($input).append($label);
+			$this._modeChanger.append($input).append($label);
 			if (i === $this.options.mode) {
 				$input.prop("checked", true);
 			} else {
 				$input.prop("checked", false);
 			}
 		}
-		$modechanger.buttonset();
-		$modechanger.find(":input").change(function(e) {
-			$this.options.mode = $(this).data("mode");
-			$this.gridfix();
-			$this.dimensionfix();
-			$this.datefix();
-			$this.refresh();
+		$this._modeChanger.buttonset();
+		$this._modeChanger.find(":input").change(function(e) {
+			$this.changeMode($(this).data("mode"));
 		});
 
 		//more function button
@@ -202,8 +204,8 @@ $.widget("aekt.tcalendar", {
 				});
 				return false;
 			});
-		$header.append($todayBtn).append($todayField).append($prevBtn).append($nextBtn).append($moreBtn)
-			.append($moreMenu).append($modechanger).append($titleWrapper);
+		$header.append($todayBtn).append(this._todayDatePicker).append($prevBtn).append($nextBtn).append($moreBtn)
+			.append($moreMenu).append($this._modeChanger).append($titleWrapper);
 		$header.append($("<div/>"));
 
 		$this.gridfix();
@@ -269,6 +271,18 @@ $.widget("aekt.tcalendar", {
 			console.log("updateAgendaById: no agenda with Id " + id + " was found.");
 		}
 
+	},
+	changeMode: function(mode){
+		if (this._mode[mode]){
+			this._modeChanger.find("input").prop("checked", false);
+			this._modeChanger.find("input[value="+mode+"]").prop("checked", true);
+			this._modeChanger.buttonset("refresh");
+			this.options.mode = mode;
+			this.gridfix();
+			this.dimensionfix();
+			this.datefix();
+			this.refresh();
+		}
 	},
 	refresh: function() {
 		if (this._mode[this.options.mode] && this._mode[this.options.mode].func && this._mode[this.options.mode].func.refresh) {
@@ -385,6 +399,78 @@ $.widget("aekt.tcalendar", {
 			throw "invalid calendar field detected, must be a string value";
 		}
 		return true;
+	},
+	//main utility private function for agenda view
+	_agendaGrid: function(){
+		var $grid = this.element.find(".tcal-grid");
+		var $scrollpanel = $("<div/>", {"class": "tcal-grid-agenda-scrollpanel"}).css("overflow", "auto");
+		var $staticpanel_content = $("<div/>", {"class": "tcal-grid-agenda-content"});
+		var $headerExt = this.element.find(".tcal-header-ext");
+		$grid.children().remove();
+		$grid.append($scrollpanel);
+		$scrollpanel.append($staticpanel_content);
+		$headerExt.children().remove(); // clear header ext
+	},
+	_agendaDimension: function(){
+		var $_this = this;
+		var $grid = this.element.find(".tcal-grid").css("width", $_this.element.width() - 20);
+		var actual_height = $grid.height();
+		var $scrollpanel_content = $grid.find(".tcal-grid-agenda-content");
+		var $scrollpanel = $grid.find(".tcal-grid-agenda-scrollpanel");
+		$scrollpanel.css("width", $grid.width() + 15).css("height", actual_height);
+		$scrollpanel_content.find(".tcal-view-agenda").css("width", $grid.width());
+	},
+	_agendaPrev: function(){
+		
+	},
+	_agendaNext: function(){
+		
+	},
+	_agendaRefresh: function(){
+		var $this = this;
+		var $grid = this.element.find(".tcal-grid");
+		var $scrollpanel_content = $grid.find(".tcal-grid-agenda-content");
+		var todayYear = $this.options.date.getFullYear();
+		var todayDate = $this.options.date.getDate();
+		var todayMonth = $this.options.date.getMonth();
+		var firstDayOfList = new Date(todayYear, todayMonth, todayDate, 0, 0, 0, 0);
+		var dayAfterLastFilterDay = new Date(firstDayOfList.getTime() + $this._millisec_day * 120); // we display agenda that is operating for the next 120 days
+		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
+			var startInRange = (agenda.startDate.getTime() < dayAfterLastFilterDay.getTime() && agenda.startDate.getTime() >= firstDayOfList.getTime());
+			var endInRange = (agenda.endDate.getTime() < dayAfterLastFilterDay.getTime() && agenda.endDate.getTime() > firstDayOfList.getTime());
+			var crossedInRange = (agenda.startDate.getTime() < firstDayOfList.getTime() && agenda.endDate.getTime() > dayAfterLastFilterDay.getTime());
+			return (startInRange || endInRange || crossedInRange);
+		});
+		$.each(filteredAgenda, function(index, agenda){
+			//for every agenda we generate the agenda cell and put it into scrollpanel
+			var $agenda = $("<div/>", {"class": "tcal-view-agenda"});
+			$agenda.css("width", $grid.width());
+			var $agendaStartDate = $("<div/>", {"class": "tcal-view-agenda-startdate"});
+			var $agendaStartDateSpan = $("<span/>", {html: agenda.startDate.toDateString()})
+				.data("year", agenda.startDate.getFullYear())
+				.data("month", (agenda.startDate.getMonth() + 1))
+				.data("day", agenda.startDate.getDate())
+				.click(function(e){
+					var _$this = $(this);
+					$this._todayDatePicker.datepicker("setDate", _$this.data("month")+"/"+_$this.data("day")+"/"+_$this.data("year"));
+					$this.changeMode("d");
+				});
+			$agendaStartDate.append($agendaStartDateSpan);
+			var $agendaEndDate = $("<div/>", {"class":"tcal-view-agenda-enddate"});
+			$agendaEndDate.html(agenda.allDay?"All Day": agenda.endDate.toLocaleTimeString() + " - " + agenda.startDate.toLocaleTimeString());
+			var $agendaLabel = $("<div/>", {"class" : "tcal-view-agenda-label"});
+			var $agendaLabelSpan = $("<span/>", {html: agenda.title}).data("id", agenda.id);
+			$agendaLabelSpan.click(function(e) {
+				$this._onAgendaClick(this);
+			}).hover(function() {
+				$this._onAgendaMouseEnter(this);
+			}, function() {
+				$this._onAgendaMouseExit(this);
+			});
+			$agendaLabel.append($agendaLabelSpan);
+			$agenda.append($agendaStartDate).append($agendaEndDate).append($agendaLabel);
+			$scrollpanel_content.append($agenda);
+		});
 	},
 	//main utility private function for day view
 	_dayGrid: function(){
@@ -571,7 +657,7 @@ $.widget("aekt.tcalendar", {
 					html: agenda.title,
 					"class": "tcal-day-agenda-title"
 				});
-				$div.append($label).css("width", $allDayCells.width() - 5);
+				$div.append($label).css("width", $allDayCells.width() - 5).data("id", agenda.id);
 				$allDayCells.append($div).addClass("tcal-day-halfhour-allday");
 				markAllDay(agenda.startDate);
 				$div.click(function(e) {
@@ -623,7 +709,7 @@ $.widget("aekt.tcalendar", {
 					$div = $("<div/>"); //the div for agenda
 					$allDayCells.append($div);
 				}
-				$div.addClass("tcal-day-allday-agenda tcal-day-allday-agenda-used tcal-day-allday-actual").css("background-color", agenda.color);
+				$div.data("id", agenda.id).addClass("tcal-day-allday-agenda tcal-day-allday-agenda-used tcal-day-allday-actual").css("background-color", agenda.color);
 				$div.click(function(e) {
 					$this._onAgendaClick(this);
 				}).hover(function() {
@@ -736,7 +822,7 @@ $.widget("aekt.tcalendar", {
 				html: agenda.title,
 				"class": "tcal-day-agenda-title"
 			});
-			$div.append($label);
+			$div.append($label).data("id", agenda.id);
 			$startCell.append($div);
 			$div.click(function(e) {
 				$this._onAgendaClick(this);
@@ -992,7 +1078,7 @@ $.widget("aekt.tcalendar", {
 					"class": "tcal-week-agenda-title"
 				});
 				$div.append($label).css("width", $($allDayCells[agenda.startDate.getDay()]).width() - 5);
-				$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday");
+				$($allDayCells[agenda.startDate.getDay()]).append($div).addClass("tcal-week-halfhour-allday").data("id", agenda.id);
 				markAllDay(agenda.startDate);
 				$div.click(function(e) {
 					$this._onAgendaClick(this);
@@ -1043,7 +1129,7 @@ $.widget("aekt.tcalendar", {
 					$div = $("<div/>"); //the div for agenda
 					$($allDayCells[attr.firstday.getDay()]).append($div);
 				}
-				$div.addClass("tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual").css("background-color", agenda.color);
+				$div.addClass("tcal-week-allday-agenda tcal-week-allday-agenda-used tcal-week-allday-actual").css("background-color", agenda.color).data("id", agenda.id);
 				$div.click(function(e) {
 					$this._onAgendaClick(this);
 				}).hover(function() {
@@ -1159,7 +1245,7 @@ $.widget("aekt.tcalendar", {
 				html: agenda.title,
 				"class": "tcal-week-agenda-title"
 			});
-			$div.append($label);
+			$div.append($label).data("id", agenda.id);
 			$startCell.append($div);
 			$div.click(function(e) {
 				$this._onAgendaClick(this);
@@ -1371,7 +1457,7 @@ $.widget("aekt.tcalendar", {
 						$div = $("<div/>"); //the div for agenda
 						$cell.append($div);
 					}
-					$div.addClass("tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual").css("background-color", agenda.color);
+					$div.addClass("tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual").css("background-color", agenda.color).data("id", agenda.id);
 					//add label
 					var $label = $("<div/>", {
 						html: agenda.title,
@@ -1432,7 +1518,7 @@ $.widget("aekt.tcalendar", {
 						if (counterDate.getTime() < attr.upToDate.getTime()) {
 							$div = $("<div/>", {
 								"class": "tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual"
-							}).css("background-color", agenda.color); //the div for agenda
+							}).css("background-color", agenda.color).data("id", agenda.id); //the div for agenda
 							//add label
 							var $label = $("<div/>", {
 								html: agenda.title,

@@ -90,7 +90,7 @@
 	box-sizing: border-box;
 }
 
-.tcal-grid-week-scrollpanel, .tcal-grid-day-scrollpanel{
+.tcal-grid-week-scrollpanel, .tcal-grid-day-scrollpanel, .tcal-grid-agenda-scrollpanel{
 	position:relative;
 }
 
@@ -304,4 +304,44 @@
     content: " ";
     display: inline-block;
     height: 0;
+}
+
+.tcal-view-agenda{
+	display: inline-block;
+	padding: 10px;
+	box-sizing:border-box;
+	border-top: 1px solid #dedede;
+	border-bottom: 1px solid #dedede;
+}
+
+.tcal-view-agenda .tcal-view-agenda-startdate, .tcal-view-agenda .tcal-view-agenda-enddate{
+	min-width: 200px;
+	display: inline-block;
+	font-size: 10pt;
+	font-family: Arial, Verdana;
+	font-weight: bold;
+	color: #4169E1;
+}
+
+.tcal-view-agenda .tcal-view-agenda-label{
+	min-width: 250px;
+	display: inline-block;
+	font-size: 10pt;
+	font-family: Arial, Verdana;
+	font-weight: bold;
+	color: #B22222;
+}
+
+.tcal-view-agenda .tcal-view-agenda-enddate{
+	min-width: 200px;
+	display: inline-block;
+	font-size: 10pt;
+	font-family: Arial, Verdana;
+	font-weight: normal;
+	color: #333;
+}
+
+.tcal-view-agenda .tcal-view-agenda-label:hover, .tcal-view-agenda .tcal-view-agenda-startdate:hover{
+	cursor:pointer;
+	text-decoration: underline;
 }
