@@ -6,6 +6,7 @@ $.widget("aekt.tcalendar", {
 		agenda: []
 	},
 	_millisec_day: 86400000,
+	_millisec_year: 31536000000,
 	_weekCellWidth: [0, 0, 0, 0, 0, 0, 0],
 	_todayDatePicker: null,
 	_modeChanger: null,
@@ -54,8 +55,8 @@ $.widget("aekt.tcalendar", {
 				dimension: "_dayDimension",
 				date: "_dayDate",
 				refresh: "_dayRefresh",
-				next: "_monthNext",
-				prev: "_monthPrev"
+				next: "_dayNext",
+				prev: "_dayPrev"
 			}
 		},
 		a: {
@@ -100,6 +101,7 @@ $.widget("aekt.tcalendar", {
 			html: '>'
 		}).button().click(function(e) {
 			$this.next();
+			$this._todayDatePicker.datepicker("setDate", $this.options.date);
 		});
 		//previous month button
 		var $prevBtn = $("<button/>", {
@@ -107,6 +109,7 @@ $.widget("aekt.tcalendar", {
 			html: '<'
 		}).button().click(function(e) {
 			$this.prev();
+			$this._todayDatePicker.datepicker("setDate", $this.options.date);
 		});
 		//today button
 		var $todayBtn = $("<button/>", {
@@ -114,6 +117,7 @@ $.widget("aekt.tcalendar", {
 			html: 'Today'
 		}).button().click(function(e) {
 			$this.options.date = new Date();
+			$this._todayDatePicker.datepicker("setDate", $this.options.date);
 			$this.datefix();
 			$this.refresh();
 			$this._trigger("today");
@@ -127,7 +131,7 @@ $.widget("aekt.tcalendar", {
 			dateFormat: "mm/dd/yy",
 			numberOfMonths: 1,
 			onSelect: function(dateText, pickerInst) {
-				$this.options.date = $todayField.datepicker("getDate");
+				$this.options.date = $this._todayDatePicker.datepicker("getDate");
 				$this.datefix();
 				$this.refresh();
 				$this._trigger("today");
@@ -272,10 +276,10 @@ $.widget("aekt.tcalendar", {
 		}
 
 	},
-	changeMode: function(mode){
-		if (this._mode[mode]){
+	changeMode: function(mode) {
+		if (this._mode[mode]) {
 			this._modeChanger.find("input").prop("checked", false);
-			this._modeChanger.find("input[value="+mode+"]").prop("checked", true);
+			this._modeChanger.find("input[value=" + mode + "]").prop("checked", true);
 			this._modeChanger.buttonset("refresh");
 			this.options.mode = mode;
 			this.gridfix();
@@ -401,17 +405,21 @@ $.widget("aekt.tcalendar", {
 		return true;
 	},
 	//main utility private function for agenda view
-	_agendaGrid: function(){
+	_agendaGrid: function() {
 		var $grid = this.element.find(".tcal-grid");
-		var $scrollpanel = $("<div/>", {"class": "tcal-grid-agenda-scrollpanel"}).css("overflow", "auto");
-		var $staticpanel_content = $("<div/>", {"class": "tcal-grid-agenda-content"});
+		var $scrollpanel = $("<div/>", {
+			"class": "tcal-grid-agenda-scrollpanel"
+		}).css("overflow", "auto");
+		var $staticpanel_content = $("<div/>", {
+			"class": "tcal-grid-agenda-content"
+		});
 		var $headerExt = this.element.find(".tcal-header-ext");
 		$grid.children().remove();
 		$grid.append($scrollpanel);
 		$scrollpanel.append($staticpanel_content);
 		$headerExt.children().remove(); // clear header ext
 	},
-	_agendaDimension: function(){
+	_agendaDimension: function() {
 		var $_this = this;
 		var $grid = this.element.find(".tcal-grid").css("width", $_this.element.width() - 20);
 		var actual_height = $grid.height();
@@ -420,16 +428,18 @@ $.widget("aekt.tcalendar", {
 		$scrollpanel.css("width", $grid.width() + 15).css("height", actual_height);
 		$scrollpanel_content.find(".tcal-view-agenda").css("width", $grid.width());
 	},
-	_agendaPrev: function(){
-		
+	_agendaPrev: function() {
+		this.options.date.setTime(this.options.date.getTime() - this._millisec_day * 120);
 	},
-	_agendaNext: function(){
-		
+	_agendaNext: function() {
+		this.options.date.setTime(this.options.date.getTime() + this._millisec_day * 120);
 	},
-	_agendaRefresh: function(){
+	_agendaRefresh: function() {
 		var $this = this;
 		var $grid = this.element.find(".tcal-grid");
 		var $scrollpanel_content = $grid.find(".tcal-grid-agenda-content");
+		$scrollpanel_content.children().remove();//clear old record
+		var $header = $this.element.find(".tcal-header");
 		var todayYear = $this.options.date.getFullYear();
 		var todayDate = $this.options.date.getDate();
 		var todayMonth = $this.options.date.getMonth();
@@ -441,25 +451,39 @@ $.widget("aekt.tcalendar", {
 			var crossedInRange = (agenda.startDate.getTime() < firstDayOfList.getTime() && agenda.endDate.getTime() > dayAfterLastFilterDay.getTime());
 			return (startInRange || endInRange || crossedInRange);
 		});
-		$.each(filteredAgenda, function(index, agenda){
+		$header.find(".tcal-header-primary-title").html($this.options.date.toLocaleDateString() + " - " + dayAfterLastFilterDay.toLocaleDateString());
+		$header.find(".tcal-header-secondary-title").html("");
+		$.each(filteredAgenda, function(index, agenda) {
 			//for every agenda we generate the agenda cell and put it into scrollpanel
-			var $agenda = $("<div/>", {"class": "tcal-view-agenda"});
+			var $agenda = $("<div/>", {
+				"class": "tcal-view-agenda"
+			});
 			$agenda.css("width", $grid.width());
-			var $agendaStartDate = $("<div/>", {"class": "tcal-view-agenda-startdate"});
-			var $agendaStartDateSpan = $("<span/>", {html: agenda.startDate.toDateString()})
+			var $agendaStartDate = $("<div/>", {
+				"class": "tcal-view-agenda-startdate"
+			});
+			var $agendaStartDateSpan = $("<span/>", {
+					html: agenda.startDate.toDateString()
+				})
 				.data("year", agenda.startDate.getFullYear())
 				.data("month", (agenda.startDate.getMonth() + 1))
 				.data("day", agenda.startDate.getDate())
-				.click(function(e){
+				.click(function(e) {
 					var _$this = $(this);
-					$this._todayDatePicker.datepicker("setDate", _$this.data("month")+"/"+_$this.data("day")+"/"+_$this.data("year"));
+					$this._todayDatePicker.datepicker("setDate", _$this.data("month") + "/" + _$this.data("day") + "/" + _$this.data("year"));
 					$this.changeMode("d");
 				});
 			$agendaStartDate.append($agendaStartDateSpan);
-			var $agendaEndDate = $("<div/>", {"class":"tcal-view-agenda-enddate"});
-			$agendaEndDate.html(agenda.allDay?"All Day": agenda.endDate.toLocaleTimeString() + " - " + agenda.startDate.toLocaleTimeString());
-			var $agendaLabel = $("<div/>", {"class" : "tcal-view-agenda-label"});
-			var $agendaLabelSpan = $("<span/>", {html: agenda.title}).data("id", agenda.id);
+			var $agendaEndDate = $("<div/>", {
+				"class": "tcal-view-agenda-enddate"
+			});
+			$agendaEndDate.html(agenda.allDay ? "All Day" : agenda.endDate.toLocaleTimeString() + " - " + agenda.startDate.toLocaleTimeString());
+			var $agendaLabel = $("<div/>", {
+				"class": "tcal-view-agenda-label"
+			});
+			var $agendaLabelSpan = $("<span/>", {
+				html: agenda.title
+			}).data("id", agenda.id).css("color", agenda.color);
 			$agendaLabelSpan.click(function(e) {
 				$this._onAgendaClick(this);
 			}).hover(function() {
@@ -467,13 +491,16 @@ $.widget("aekt.tcalendar", {
 			}, function() {
 				$this._onAgendaMouseExit(this);
 			});
+			if ($this.options.agendaTooltip) {
+				$this.options.agendaTooltip($agendaLabelSpan, agenda);
+			}
 			$agendaLabel.append($agendaLabelSpan);
 			$agenda.append($agendaStartDate).append($agendaEndDate).append($agendaLabel);
 			$scrollpanel_content.append($agenda);
 		});
 	},
 	//main utility private function for day view
-	_dayGrid: function(){
+	_dayGrid: function() {
 		var $grid = this.element.find(".tcal-grid");
 		var $scrollpanel = $("<div/>", {
 			"class": "tcal-grid-day-scrollpanel"
@@ -541,7 +568,7 @@ $.widget("aekt.tcalendar", {
 		}
 		$staticpanel_content.append($("<div/>").css("clear", "both"));
 	},
-	_dayDimension: function(){
+	_dayDimension: function() {
 		var $_this = this;
 		var $grid = $_this.element.find(".tcal-grid");
 		$grid.css("width", $_this.element.width() - 20);
@@ -586,12 +613,16 @@ $.widget("aekt.tcalendar", {
 				.css("margin-left", attr.startedWidthUnit * (width_pixel + 4));
 		});
 	},
-	_dayDate: function(){
+	_dayDate: function() {
 		var $_this = this;
 		var $grid = $_this.element.find(".tcal-grid");
 		var $headerExt = $_this.element.find(".tcal-header-ext");
+		var $header = $_this.element.find(".tcal-header");
 		var dateMonth = $_this.options.date.getMonth(); //get today's month
 		var dateDay = $_this.options.date.getDate(); //get today's day
+		var dateYear = $_this.options.date.getFullYear(); //get today's year
+		$header.find(".tcal-header-primary-title").html($_this.options.date.toDateString());
+		$header.find(".tcal-header-secondary-title").html("");
 		$headerExt.find(".tcal-day-header-cell-date").each(function(index, cell) {
 			var $this = $(this);
 			$(cell).html((dateMonth + 1) + "/" + (dateDay));
@@ -607,13 +638,13 @@ $.widget("aekt.tcalendar", {
 			$this.children().remove();
 		});
 	},
-	_dayPrev: function(){
+	_dayPrev: function() {
 		this.options.date.setTime(this.options.date.getTime() - this._millisec_day);
 	},
-	_dayNext: function(){
+	_dayNext: function() {
 		this.options.date.setTime(this.options.date.getTime() + this._millisec_day);
 	},
-	_dayRefresh: function(){
+	_dayRefresh: function() {
 		var $this = this;
 		var dateMonth = $this.options.date.getMonth(); //get today's month
 		var dateYear = $this.options.date.getFullYear(); //get today's year
@@ -631,7 +662,7 @@ $.widget("aekt.tcalendar", {
 			var endInRange = (agenda.endDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.endDate.getTime() > firstDayOfWeek.getTime());
 			var crossedInRange = (agenda.startDate.getTime() < firstDayOfWeek.getTime() && agenda.endDate.getTime() > dayAfterLastDayOfWeek.getTime());
 			if ($this._isSameDay(agenda.startDate, agenda.endDate) && agenda.allDay == false) {
-				if (startInRange || endInRange){
+				if (startInRange || endInRange) {
 					sameDayAgenda.push(agenda);
 				}
 				return false;
@@ -727,7 +758,7 @@ $.widget("aekt.tcalendar", {
 				} else {
 					attr.upToDate = new Date(dayAfterLastDayOfWeek.getTime());
 				}
-				$div.css("width",$allDayCells.width() - 5);
+				$div.css("width", $allDayCells.width() - 5);
 				$allDayCells.append($div).addClass("tcal-day-halfhour-allday");
 				markAllDay(attr.firstday);
 				var dateCounter = new Date(attr.firstday.getTime());
@@ -997,6 +1028,7 @@ $.widget("aekt.tcalendar", {
 		var $_this = this;
 		var $grid = $_this.element.find(".tcal-grid");
 		var $headerExt = $_this.element.find(".tcal-header-ext");
+		var $header = $_this.element.find(".tcal-header");
 		var dateMonth = $_this.options.date.getMonth(); //get today's month
 		var dateDay = $_this.options.date.getDate(); //get today's day
 		var dateYear = $_this.options.date.getFullYear(); //get today's year
@@ -1012,6 +1044,8 @@ $.widget("aekt.tcalendar", {
 			}
 			dayCount.setTime(dayCount.getTime() + $_this._millisec_day);
 		});
+		$header.find(".tcal-header-primary-title").html($_this.options.date.toLocaleDateString() + " - " + dayCount.toLocaleDateString());
+		$header.find(".tcal-header-secondary-title").html("");
 		$grid.find(".tcal-week-halfhour-cell, .tcal-week-allday-cell").each(function() {
 			var $this = $(this);
 			$this.removeClass("tcal-week-halfhour-allday");
@@ -1047,7 +1081,7 @@ $.widget("aekt.tcalendar", {
 			var endInRange = (agenda.endDate.getTime() < dayAfterLastDayOfWeek.getTime() && agenda.endDate.getTime() > firstDayOfWeek.getTime());
 			var crossedInRange = (agenda.startDate.getTime() < firstDayOfWeek.getTime() && agenda.endDate.getTime() > dayAfterLastDayOfWeek.getTime());
 			if ($this._isSameDay(agenda.startDate, agenda.endDate) && agenda.allDay == false) {
-				if (startInRange || endInRange){
+				if (startInRange || endInRange) {
 					sameDayAgenda.push(agenda);
 				}
 				return false;
@@ -1412,7 +1446,8 @@ $.widget("aekt.tcalendar", {
 		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
 			var startInRange = (agenda.startDate.getTime() < lastDayOfCalendar.getTime() && agenda.startDate.getTime() >= firstDayOfCalendar.getTime());
 			var endInRange = (agenda.endDate.getTime() < lastDayOfCalendar.getTime() && agenda.endDate.getTime() > firstDayOfCalendar.getTime());
-			return (startInRange || endInRange);
+			var crossedInRange = (agenda.startDate.getTime() < firstDayOfCalendar.getTime() && agenda.endDate.getTime() > lastDayOfCalendar.getTime());
+			return (startInRange || endInRange || crossedInRange);
 		});
 		//sort the filtered agenda by start date
 		filteredAgenda.sort($this._sortAgendaByDate);
@@ -1558,5 +1593,138 @@ $.widget("aekt.tcalendar", {
 				counterDate.setTime(counterDate.getTime() + $this._millisec_day);
 			});
 		});
+	},
+	_yearGrid: function(){
+		var $grid = this.element.find(".tcal-grid");
+		var $headerExt = this.element.find(".tcal-header-ext");
+		$grid.children().remove();
+		$headerExt.children().remove();
+		//we always use 4 x 3 width x height mapping, might implement some other algorithm to automatically determine the best aspect ratio when possible
+		for (var i = 0; i < 12; i++){
+			var $monthGrid = $("<div/>", {"class" : "tcal-year-month"});
+			//for each month we generate 2 main sections, one for month label and one for days
+			var $labelSec = $("<div/>", {"class" : "tcal-year-month-label"});
+			var $daySec = $("<div/>", {"class" : "tcal-year-month-days"});
+			//for each month we generate 35 cells for days
+			for (var j = 0; j < 35; j++){
+				var $day = $("<div/>", {"class" : "tcal-year-month-day"});
+				$daySec.append($day);
+			}
+			$monthGrid.append($labelSec).append($daySec);
+			$grid.append($monthGrid);
+		}
+	},
+	_yearDimension: function(){
+		var $this = this;
+		var $grid = this.element.find(".tcal-grid");
+		//var $headerExt = this.element.find(".tcal-header-ext");
+		$grid.css("width", $this.element.width() - 20);
+		var actualWidth = $grid.width();
+		var actualHeight = $grid.height();
+		var monthCellHeight = actualHeight / 3;
+		var monthCellWidth = actualWidth / 4;
+		$grid.find(".tcal-year-month").each(function(index, obj){
+			var $_this = $(this);
+			$_this.css("width", monthCellWidth).css("height", monthCellHeight);
+			$_this.find(".tcal-year-month-label").css("height", 20);
+			$_this.find(".tcal-year-month-days").css("height", monthCellHeight - 20);
+		});
+		var dayCellHeight = (monthCellHeight - 20) / 5 - 2;
+		var dayCellWidth = monthCellWidth / 7 - 2;
+		$grid.find(".tcal-year-month-day").each(function(){
+			$(this).css("width", dayCellWidth).css("height", dayCellHeight);
+		});
+	},
+	_yearDate: function(){
+		var $this = this;
+		var $grid = this.element.find(".tcal-grid");
+		var dateYear = $this.options.date.getFullYear(); //get today's year
+		var $header = $this.element.find(".tcal-header");
+		$header.find(".tcal-header-primary-title").html("");
+		$header.find(".tcal-header-secondary-title").html(dateYear);
+		$grid.find(".tcal-year-month-label").each(function(index){
+			$(this).html($this._monthNameFull[index]).addClass("clickable").data("month", index).click(function(e){
+				$this.options.date.setMonth($(this).data("month"));
+				$this._todayDatePicker.datepicker("setDate", $this.options.date);
+				$this.changeMode('m');
+			});
+		});
+		var today = new Date();
+		$grid.find(".tcal-year-month").each(function(index){
+			var dayCounter = new Date(dateYear, index, 1, 0, 0, 0, 0);
+			$(this).find(".tcal-year-month-day").each(function(_index){
+				if (dayCounter.getMonth() == index && _index >= dayCounter.getDay()){
+					var $_this = $(this);
+					$_this.addClass("clickable").data("date", dayCounter.getTime()).click(function(e){
+						$this.options.date = new Date($_this.data("date"));
+						$this._todayDatePicker.datepicker("setDate", $this.options.date);
+						$this.changeMode('d');
+					});
+					if (today.getMonth() == index && today.getDate() == dayCounter.getDate()){
+						$_this.html("<span class='tcal-year-month-date tcal-year-month-today'>"+dayCounter.getDate()+"</span>")
+							  .removeClass("tcal-year-month-date-booked").removeClass("tcal-year-month-date-booked-multi");
+					}else{
+						$_this.html("<span class='tcal-year-month-date'>"+dayCounter.getDate()+"</span>")
+							  .removeClass("tcal-year-month-date-booked").removeClass("tcal-year-month-date-booked-multi");
+					}
+					dayCounter.setTime(dayCounter.getTime() + $this._millisec_day);
+				}else{
+					$(this).html("&nbsp;").removeClass("clickable").removeClass("tcal-year-month-date-booked").removeClass("tcal-year-month-date-booked-multi").off("click").data("date", null);
+				}
+			});
+		});
+	},
+	_yearNext: function(){
+		this.options.date.setTime(this.options.date.getTime() + this._millisec_year);
+	},
+	_yearPrev: function(){
+		this.options.date.setTime(this.options.date.getTime() - this._millisec_year);
+	},
+	_yearRefresh: function(){
+		var $this = this;
+		var $grid = this.element.find(".tcal-grid");
+		var dateYear = this.options.date.getFullYear(); //get today's year
+		var firstDayOfCalendar = new Date(dateYear, 0, 1, 0, 0, 0, 0);
+		var lastDayOfCalendar = new Date(firstDayOfCalendar.getTime() + $this._millisec_year);
+		var filteredIndex = 0;
+		var overlapped = 0; 		//before everything starts, let see how many starts prior
+		var filteredAgenda = $.grep($this.options.agenda, function(agenda, index) {
+			var startInRange = (agenda.startDate.getTime() < lastDayOfCalendar.getTime() && agenda.startDate.getTime() >= firstDayOfCalendar.getTime());
+			var endInRange = (agenda.endDate.getTime() < lastDayOfCalendar.getTime() && agenda.endDate.getTime() > firstDayOfCalendar.getTime());
+			var crossedInRange = (agenda.startDate.getTime() < firstDayOfCalendar.getTime() && agenda.endDate.getTime() > lastDayOfCalendar.getTime());
+			if (startInRange || endInRange || crossedInRange){
+				if (agenda.startDate.getTime < firstDayOfCalendar.getTime()) overlapped++; //we do a counter here so we don't have to search for the value for next code block
+				return true;
+			}
+			return false;
+		});
+		if (filteredAgenda.length == 0) return;
+		$grid.find(".tcal-year-month").each(function(index){
+			var dayCounter = new Date(dateYear, index, 1, 0, 0, 0, 0);
+			$(this).find(".tcal-year-month-day").each(function(_index){
+				if (dayCounter.getMonth() == index && _index >= dayCounter.getDay()){
+					//if we are still in the same month
+					//we see how many has started
+					while ($this._isSameDay(filteredAgenda[filteredIndex].startDate, dayCounter)){
+						overlapped++;
+						filteredIndex++;
+					}
+					var $_this = $(this);
+					switch(overlapped){
+					case 0: $_this.removeClass("tcal-year-month-date-booked").removeClass("tcal-year-month-date-booked-multi"); break;
+					case 1: $_this.addClass("tcal-year-month-date-booked"); break;
+					default: $_this.addClass("tcal-year-month-date-booked-multi"); break;
+					}
+					for (var i = 0; i < filteredIndex; i++){
+						//for everyday we look at see how many has ended on this day
+						if ($this._isSameDay(dayCounter, filteredAgenda[i].endDate)) overlapped--;
+					}
+					dayCounter.setTime(dayCounter.getTime() + $this._millisec_day);
+				}else{
+					//it is just filler now
+					$(this).removeClass("tcal-year-month-date-booked").removeClass("tcal-year-month-date-booked-multi");
+				}
+			});
+		});
 	}
-});	
+});
