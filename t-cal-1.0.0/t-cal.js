@@ -1321,10 +1321,10 @@ $.widget("aekt.tcalendar", {
 			var $cell = $("<div/>", {
 				"class": "tcal-month-day-cell"
 			});
-			var $dayheader = $("<div/>", {
-				"class": "tcal-month-day-cell-header",
-				html: "<span class='tcal-month-day-cell-header-day'></span>"
-			});
+			var $dayheader = $("<div/>", {"class": "tcal-month-day-cell-header"});
+			var $daydate = $("<span/>", {"class" : "tcal-month-day-cell-header-day"});
+			var $dayexceed = $("<span/>", { "class" : "tcal-month-day-exceed tcal-month-day-exceed-off"}).data("exceed", 0);
+			$dayheader.append($daydate).append($dayexceed);
 			var $daycontent = $("<div/>", {
 				"class": "tcal-month-day-cell-content"
 			});
@@ -1396,6 +1396,7 @@ $.widget("aekt.tcalendar", {
 			var cellDay = cellDate.getDate();
 			var $c_this = $(this);
 			var dayValObj = $c_this.find(".tcal-month-day-cell-header-day");
+			$c_this.find(".tcal-month-day-exceed").addClass("tcal-month-day-exceed-off").data("excess", 0);
 			dayValObj.html((cellDay == 1) ? $this._monthNameShort[cellMonth] + " 1" : cellDay);
 			if (cellMonth != dateMonth) {
 				$c_this.addClass("tcal-month-different-month");
@@ -1449,8 +1450,11 @@ $.widget("aekt.tcalendar", {
 			var crossedInRange = (agenda.startDate.getTime() < firstDayOfCalendar.getTime() && agenda.endDate.getTime() > lastDayOfCalendar.getTime());
 			return (startInRange || endInRange || crossedInRange);
 		});
+		$grid.find(".tcal-month-day-exceed").data("excess", 0);
 		//sort the filtered agenda by start date
 		filteredAgenda.sort($this._sortAgendaByDate);
+		var divHeight = 0;
+		var cellHeight = 0;
 		$.each(filteredAgenda, function(index, agenda) {
 			//div for the agenda
 			var firstDay = agenda.startDate;
@@ -1463,10 +1467,12 @@ $.widget("aekt.tcalendar", {
 			var attr = {
 				hasStarted: false,
 				startedHeight: 0,
-				upToDate: null
+				upToDate: null,
+				exceed: false
 			};
 			$this.element.find(".tcal-month-day-cell .tcal-month-day-cell-content").each(function(cellIndex, cell) {
 				var $cell = $(cell);
+				cellHeight = $cell.parent().height() - $cell.children().first().height();
 				var cellChildren = $cell.children();
 				if ($this._isSameDay(counterDate, firstDay)) {
 					//we found a start date
@@ -1486,44 +1492,57 @@ $.widget("aekt.tcalendar", {
 							$div = $(cellChildren[attr.startedHeight]);
 						} else {
 							$div = $("<div/>");
-							$cell.append($div);
+							if ((cellHeight - divHeight) < ((cellChildren.length) * divHeight) ){
+								var $excessLabel = $cell.parent().find(".tcal-month-day-exceed");
+								$excessLabel.data("excess", $excessLabel.data("excess") + 1); 
+								$excessLabel.removeClass("tcal-month-day-exceed-off").html($excessLabel.data("excess") + " more...");
+								attr.exceed = true;
+							}else{
+								$cell.append($div);
+							}
 						}
 					} else {
 						$div = $("<div/>"); //the div for agenda
-						$cell.append($div);
+						if ((cellHeight - divHeight) < ((cellChildren.length) * divHeight) ){
+							var $excessLabel = $cell.parent().find(".tcal-month-day-exceed");
+							$excessLabel.data("excess", $excessLabel.data("excess") + 1);
+							$excessLabel.removeClass("tcal-month-day-exceed-off").html($excessLabel.data("excess") + " more...");
+							attr.exceed = true;
+						}else{
+							$cell.append($div);
+						}
 					}
-					$div.addClass("tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual").css("background-color", agenda.color).data("id", agenda.id);
-					//add label
-					var $label = $("<div/>", {
-						html: agenda.title,
-						"class": "tcal-month-agenda-title"
-					});
-					$div.append($label).click(function(e) {
-						$this._onAgendaClick(this);
-					}).hover(function() {
-						$this._onAgendaMouseEnter(this);
-					}, function() {
-						$this._onAgendaMouseExit(this);
-					});
-					//attach tooltip callback if exist
-					if ($this.options.agendaTooltip) {
-						$this.options.agendaTooltip($div, agenda);
-					}
-					//difference
 					attr.upToDate = new Date(counterDate.getTime() + (7 - counterDate.getDay()) * $this._millisec_day);
 					if (attr.upToDate.getTime() > agenda.endDate) {
 						attr.upToDate = new Date(agenda.endDate.getFullYear(), agenda.endDate.getMonth(), agenda.endDate.getDate() + 1, 0, 0, 0, 0);
 					}
-					var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / $this._millisec_day);
-					//console.log(range);
-					$div.data("days", range);
-					$div.data("weekday", counterDate.getDay());
-					$div.data("id", agenda.id);
-					var width = $this._monthAgendaWidthOfIndex(counterDate.getDay(), range);
-					$div.css("width", width + "px");
-					//insert div into the cell
+					if (!attr.exceed){
+						$div.addClass("tcal-month-agenda tcal-month-agenda-used tcal-month-agenda-actual").css("background-color", agenda.color).data("id", agenda.id);
+						//add label
+						var $label = $("<div/>", {
+							html: agenda.title,
+							"class": "tcal-month-agenda-title"
+						});
+						$div.append($label).click(function(e) {
+							$this._onAgendaClick(this);
+						}).hover(function() {
+							$this._onAgendaMouseEnter(this);
+						}, function() {
+							$this._onAgendaMouseExit(this);
+						});
+						if ($this.options.agendaTooltip) {
+							$this.options.agendaTooltip($div, agenda);
+						}
+						var range = Math.ceil((attr.upToDate.getTime() - counterDate.getTime()) / $this._millisec_day);
+						$div.data("days", range);
+						$div.data("weekday", counterDate.getDay());
+						$div.data("id", agenda.id);
+						var width = $this._monthAgendaWidthOfIndex(counterDate.getDay(), range);
+						$div.css("width", width);
+						divHeight = $div.height();
+					}
 					attr.hasStarted = true;
-				} else if (attr.hasStarted) {
+				} else if (attr.hasStarted && !attr.exceed) {
 					//we have already started to insert
 					//there is something existing already, we check to see if it has the proper amount of children
 					if (counterDate.getTime() < attr.upToDate.getTime()) {
@@ -1705,7 +1724,7 @@ $.widget("aekt.tcalendar", {
 				if (dayCounter.getMonth() == index && _index >= dayCounter.getDay()){
 					//if we are still in the same month
 					//we see how many has started
-					while ($this._isSameDay(filteredAgenda[filteredIndex].startDate, dayCounter)){
+					while (filteredIndex < filteredAgenda.length && $this._isSameDay(filteredAgenda[filteredIndex].startDate, dayCounter)){
 						overlapped++;
 						filteredIndex++;
 					}

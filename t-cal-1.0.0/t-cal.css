@@ -30,7 +30,6 @@
 }
 
 
-
 .tcal-header > .ui-menu > li{
 	padding: 5px;
 }
@@ -380,4 +379,22 @@
 
 .tcal-year-month-date-booked-multi{
 	background-color: #FFD5E7;
+}
+
+.tcal-month-day-exceed{
+	display:inline;
+	float:right;
+	font-family: Arial, Verdana;
+	font-size: 10pt;
+	font-weight: bold;
+	margin-right: 5px;
+}
+
+.tcal-month-day-exceed:hover{
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.tcal-month-day-exceed-off{
+	display:none;
 }
