@@ -381,7 +381,7 @@
 	background-color: #FFD5E7;
 }
 
-.tcal-month-day-exceed{
+.tcal-month-day-exceed, .tcal-week-day-exceed, .tcal-day-allday-exceed{
 	display:inline;
 	float:right;
 	font-family: Arial, Verdana;
@@ -390,11 +390,16 @@
 	margin-right: 5px;
 }
 
-.tcal-month-day-exceed:hover{
+.tcal-week-day-exceed, .tcal-day-allday-exceed{
+	float: none;
+	margin-left: 10px;
+}
+
+.tcal-month-day-exceed:hover, .tcal-week-day-exceed:hover, tcal-day-allday-exceed:hover{
 	cursor: pointer;
 	text-decoration: underline;
 }
 
-.tcal-month-day-exceed-off{
+.tcal-month-day-exceed-off, .tcal-week-day-exceed-off, .tcal-day-allday-exceed-off{
 	display:none;
 }
