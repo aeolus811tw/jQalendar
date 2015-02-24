@@ -7,9 +7,6 @@ $.widget("aekt.tcalendar", {
 	},
 	_millisec_day: 86400000,
 	_millisec_year: 31536000000,
-	_weekCellWidth: [0, 0, 0, 0, 0, 0, 0],
-	_todayDatePicker: null,
-	_modeChanger: null,
 	_weekNameFull: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 	_weekNameShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 	_monthNameFull: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
@@ -72,6 +69,9 @@ $.widget("aekt.tcalendar", {
 	},
 	_create: function() {
 		var $this = this;
+		$this._weekCellWidth = [0, 0, 0, 0, 0, 0, 0];
+		$this._todayDatePicker = null;
+		$this._modeChanger = null;
 		$this.element.children().remove(); //remove everything within the target
 		$this.element.addClass("tcal-caledar"); //setup plugin class
 		$this.element.data("index", $(".tcal-calendar").length + 1);
@@ -120,7 +120,7 @@ $.widget("aekt.tcalendar", {
 			$this._todayDatePicker.datepicker("setDate", $this.options.date);
 			$this.datefix();
 			$this.refresh();
-			$this._trigger("today");
+			$this._trigger("today", null, [$this.options.date]);
 		});
 		this._todayDatePicker = $("<input/>", {
 			'class': 'tcal-today-field',
@@ -134,7 +134,7 @@ $.widget("aekt.tcalendar", {
 				$this.options.date = $this._todayDatePicker.datepicker("getDate");
 				$this.datefix();
 				$this.refresh();
-				$this._trigger("today");
+				$this._trigger("today", null, [$this.options.date]);
 			}
 		}).datepicker("setDate", $this.options.date);
 
@@ -245,6 +245,7 @@ $.widget("aekt.tcalendar", {
 				this.options.agenda.push(data);
 			}
 			this.refresh(); //reresh the view
+			this._trigger("agendaAdded", null, [data]);
 		} catch (err) {
 			if (this.options.debug)
 				console.log(err);
@@ -286,6 +287,7 @@ $.widget("aekt.tcalendar", {
 			this.dimensionfix();
 			this.datefix();
 			this.refresh();
+			$this._trigger("modeChanged", null, [$this.options.mode]);
 		}
 	},
 	refresh: function() {
@@ -315,6 +317,7 @@ $.widget("aekt.tcalendar", {
 		}
 		$this.datefix();
 		$this.refresh();
+		this._trigger("next");
 	},
 	prev: function() {
 		var $this = this;
@@ -323,6 +326,57 @@ $.widget("aekt.tcalendar", {
 		}
 		$this.datefix();
 		$this.refresh();
+		this._trigger("prev");
+	},
+	startDate: function(){
+		var dateYear = this.options.date.getFullYear(); //get today's year
+		var dateMonth = this.options.date.getMonth();
+		var dateDay = this.options.date.getDate();
+		var dateWeekday = this.options.date.getDay();
+		switch(this.options.mode){
+		case "y" : return new Date(dateYear, 0, 1, 0, 0, 0, 0);
+		case "m" :
+			var temp = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
+			temp = new Date(temp.getTime() - this._millisec_day * temp.getDay());
+			return temp;
+		case "w" :
+			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+			temp = temp.setTime(temp.getTime() - this.temp * dateWeekday);
+			return temp;
+		case "d" : case "a": return new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+		default: return null;
+		};
+	},
+	endDate: function(){
+		var dateYear = this.options.date.getFullYear(); //get today's year
+		var dateMonth = this.options.date.getMonth();
+		var dateDay = this.options.date.getDate();
+		var dateWeekday = this.options.date.getDay();
+		switch(this.options.mode){
+		case "y" : 
+			var temp = new Date(dateYear, 0, 1, 0, 0, 0, 0);
+			temp.setTime(temp.getTime() + this._millisec_year);
+			return temp;
+		case "m" :
+			var temp = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
+			temp = new Date(temp.getTime() - this._millisec_day * temp.getDay());
+			temp.setTime(temp.getTime() + this._millisec_day * 42);
+			return temp;
+		case "w" :
+			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+			temp = temp.setTime(temp.getTime() - this.temp * dateWeekday);
+			temp.setTime(temp.getTime() + this._millisec_day * 7);
+			return temp;
+		case "d" :
+			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+			temp.setTime(temp.getTime() + this._millisec_day);
+			return temp;
+		case "a":
+			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
+			temp.setTime(temp.getTime() + this._millisec_day * 120);
+			return temp;
+		default: return null;
+		};
 	},
 	//event callback methods
 	_onAgendaClick: function(srcObj) {
