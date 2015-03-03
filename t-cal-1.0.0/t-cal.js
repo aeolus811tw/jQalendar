@@ -347,6 +347,16 @@ $.widget("aekt.tcalendar", {
 		default: return null;
 		};
 	},
+	resetAgenda: function(){
+		this.options.agenda = [];
+		this.refresh();
+	},
+	removeAgendaById: function(id){
+		this.options.agenda = $.grep(this.options.agenda, function(val, index) {
+			return val.id != id;
+		});
+		this.refresh();
+	},
 	endDate: function(){
 		var dateYear = this.options.date.getFullYear(); //get today's year
 		var dateMonth = this.options.date.getMonth();
