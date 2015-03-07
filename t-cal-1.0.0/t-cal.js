@@ -287,7 +287,7 @@ $.widget("aekt.tcalendar", {
 			this.dimensionfix();
 			this.datefix();
 			this.refresh();
-			$this._trigger("modeChanged", null, [$this.options.mode]);
+			this._trigger("modeChanged", null, [this.options.mode]);
 		}
 	},
 	refresh: function() {
@@ -337,11 +337,11 @@ $.widget("aekt.tcalendar", {
 		case "y" : return new Date(dateYear, 0, 1, 0, 0, 0, 0);
 		case "m" :
 			var temp = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
-			temp = new Date(temp.getTime() - this._millisec_day * temp.getDay());
+			temp.setTime(temp.getTime() - this._millisec_day * temp.getDay());
 			return temp;
 		case "w" :
 			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
-			temp = temp.setTime(temp.getTime() - this.temp * dateWeekday);
+			temp.setTime(temp.getTime() - this._millisec_day * dateWeekday);
 			return temp;
 		case "d" : case "a": return new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
 		default: return null;
@@ -369,12 +369,12 @@ $.widget("aekt.tcalendar", {
 			return temp;
 		case "m" :
 			var temp = new Date(dateYear, dateMonth, 1, 0, 0, 0, 0);
-			temp = new Date(temp.getTime() - this._millisec_day * temp.getDay());
+			temp.setTime(temp.getTime() - this._millisec_day * temp.getDay());
 			temp.setTime(temp.getTime() + this._millisec_day * 42);
 			return temp;
 		case "w" :
 			var temp = new Date(dateYear, dateMonth, dateDay, 0, 0, 0, 0);
-			temp = temp.setTime(temp.getTime() - this.temp * dateWeekday);
+			temp.setTime(temp.getTime() - this.temp * dateWeekday);
 			temp.setTime(temp.getTime() + this._millisec_day * 7);
 			return temp;
 		case "d" :
@@ -389,6 +389,37 @@ $.widget("aekt.tcalendar", {
 		};
 	},
 	//event callback methods
+	_onCellClick: function(srcObj){
+		var $srcObj = $(srcObj);
+		var row = $srcObj.data("row");
+		var column = $srcObj.data("column");
+		var $startDate = this.startDate();
+		console.log($startDate);
+		var endDate = null;
+		var allDay = false;
+		//calculate the current time based on the index we retrieved
+		switch(this.options.mode){
+		case "m": 
+			var offsetDays = row * 7 + column;
+			$startDate.setTime($startDate.getTime() + offsetDays * this._millisec_day);
+			endDate = new Date($startDate.getTime()  + this._millisec_day);
+			allDay = true;
+			break;
+		case "w" : case "d" :
+			if (row > -1){
+				$startDate.setTime($startDate.getTime() + column * this._millisec_day + row * 1800000);
+				endDate = new Date($startDate.getFullYear(), $startDate.getMonth(), $startDate.getDate(), 23, 59, 59, 999);
+			}else{
+				$startDate.setTime($startDate.getTime() + column * this._millisec_day);
+				endDate = new Date($startDate.getTime()  + this._millisec_day);
+				allDay = true;
+			}
+			break;
+		default: return;
+		}
+		
+		this._trigger("cellClick", null, [$srcObj, $startDate, endDate, allDay]);
+	},
 	_onAgendaClick: function(srcObj) {
 		var $srcObj = $(srcObj);
 		this._trigger("agendaClick", null, [$(srcObj), this.getAgendaById($srcObj.data("id"))]);
@@ -565,6 +596,7 @@ $.widget("aekt.tcalendar", {
 	},
 	//main utility private function for day view
 	_dayGrid: function() {
+		var $this = this;
 		var $grid = this.element.find(".tcal-grid");
 		var $scrollpanel = $("<div/>", {
 			"class": "tcal-grid-day-scrollpanel"
@@ -591,7 +623,9 @@ $.widget("aekt.tcalendar", {
 		}));
 		var $cell = $("<div/>", {
 			"class": "tcal-day-allday-cell"
-		});
+		}).click(function(e){
+			$this._onCellClick($(this));
+		}).data("row", -1).data("column", 0);
 		$staticpanel.append($cell);
 		$cell = $("<div/>", {
 			"class": "tcal-day-header-cell",
@@ -608,7 +642,11 @@ $.widget("aekt.tcalendar", {
 			if (i % 2 != 0) {
 				$cell = $("<div/>", {
 					"class": "tcal-day-halfhour-cell"
+						
 				});
+				$cell.click(function(e){
+					$this._onCellClick($(this));
+				}).data("row", Math.trunc(i/2)).data("column", 0);
 			} else {
 				if (i % 4 == 0) {
 					if (hour < 10)
@@ -965,6 +1003,7 @@ $.widget("aekt.tcalendar", {
 	},
 	//main utility private function for week view
 	_weekGrid: function() {
+		var $this = this;
 		var $grid = this.element.find(".tcal-grid");
 		var $scrollpanel = $("<div/>", {
 			"class": "tcal-grid-week-scrollpanel"
@@ -992,7 +1031,9 @@ $.widget("aekt.tcalendar", {
 		for (var i = 0; i < 7; i++) {
 			var $cell = $("<div/>", {
 				"class": "tcal-week-allday-cell"
-			});
+			}).click(function(e){
+				$this._onCellClick($(this));
+			}).data("row", -1).data("column", i);
 			$staticpanel.append($cell);
 			$cell = $("<div/>", {
 				"class": "tcal-week-header-cell",
@@ -1010,7 +1051,9 @@ $.widget("aekt.tcalendar", {
 			if (i % 8 != 0) {
 				$cell = $("<div/>", {
 					"class": "tcal-week-halfhour-cell"
-				});
+				}).click(function(e){
+					$this._onCellClick($(this));
+				}).data("row", Math.trunc(i/8)).data("column", (i%8)-1);
 			} else {
 				if (i % 16 == 0) {
 					if (hour < 10)
@@ -1426,6 +1469,7 @@ $.widget("aekt.tcalendar", {
 	},
 	//main utility private function for month view
 	_monthGrid: function() {
+		var $this = this;
 		var $grid = this.element.find(".tcal-grid");
 		$grid.children().remove(); //clear the grid
 		var $innerGrid = $("<div/>", {
@@ -1458,7 +1502,9 @@ $.widget("aekt.tcalendar", {
 			var $daycontent = $("<div/>", {
 				"class": "tcal-month-day-cell-content"
 			});
-			$cell.append($dayheader).append($daycontent);
+			$cell.append($dayheader).append($daycontent).click(function(e){
+				$this._onCellClick($(this));
+			}).data("row", Math.trunc(i/7)).data("column", i%7);
 			$innerGrid.append($cell);
 		}
 		$innerGrid.append($("<div/>", {
