@@ -217,7 +217,7 @@ $.widget("aekt.tcalendar", {
 		$this.refresh();
 
 		$(window).resize(function(e) { //setup grid size
-			var viewport_h = $this.parent.height();
+			var viewport_h = $this.element.parent().height();
 			var header_h = $header.height();
 			$grid.css("height", (viewport_h - header_h - 40) + "px");
 			$this.dimensionfix();
